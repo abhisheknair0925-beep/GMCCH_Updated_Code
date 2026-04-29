@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    tools:context=".User.UserHomePage">
+
+
+    <include
+        android:id="@+id/appbar"
+        layout="@layout/app_bar_layout1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/auhp_select_dept"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:text="Radiation Oncology Department"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="25dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.1" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/auhp_select_dept"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@+id/auhp_select_dept"
+        app:layout_constraintTop_toBottomOf="@+id/auhp_select_dept"
+        app:layout_constraintVertical_bias="0.05">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="5dp"
+            android:weightSum="1">
+
+            <RelativeLayout
+                android:id="@+id/relativeLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10sp"
+                android:layout_weight="0.5"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.1">
+
+                <TextView
+                    android:id="@+id/auhp_txt1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/purple_500"
+                    android:padding="5dp"
+                    android:text="  OP.   Monday,  Wednesday"
+                    android:textColor="@color/white"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/auhp_booktocken1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/auhp_txt1"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:padding="10dp"
+                    android:text="Book Token"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/auhp_list1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/auhp_booktocken1"
+                    android:layout_centerVertical="true"
+                    android:divider="@android:color/darker_gray"
+                    android:dividerHeight="0.5dp" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10sp"
+                android:layout_weight="0.5"
+                android:layout_marginBottom="50dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/relativeLayout"
+                app:layout_constraintStart_toStartOf="@+id/relativeLayout"
+                app:layout_constraintTop_toBottomOf="@+id/relativeLayout"
+                app:layout_constraintVertical_bias="0.1">
+
+                <TextView
+                    android:id="@+id/auhp_txt2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/purple_500"
+                    android:padding="5dp"
+                    android:text="  OP.   Tuesday,Friday"
+                    android:textColor="@color/white"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/auhp_booktocken2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/auhp_txt2"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:padding="10dp"
+                    android:text="Book Token"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/auhp_list2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/auhp_booktocken2"
+                    android:layout_centerVertical="true"
+                    android:divider="@android:color/darker_gray"
+                    android:dividerHeight="0.5dp"
+                    android:layout_marginBottom="100dp"/>
+
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10sp"
+                android:layout_weight="0.5"
+                android:layout_marginBottom="50dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/relativeLayout"
+                app:layout_constraintStart_toStartOf="@+id/relativeLayout"
+                app:layout_constraintTop_toBottomOf="@+id/relativeLayout"
+                app:layout_constraintVertical_bias="0.1">
+
+                <TextView
+                    android:id="@+id/auhp_txt3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/purple_500"
+                    android:padding="5dp"
+                    android:text="  OP.   Thursday,Saturday"
+                    android:textColor="@color/white"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/auhp_booktocken3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/auhp_txt3"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:padding="10dp"
+                    android:text="Book Token"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/auhp_list3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/auhp_booktocken3"
+                    android:layout_centerVertical="true"
+                    android:divider="@android:color/darker_gray"
+                    android:dividerHeight="0.5dp"
+                    android:layout_marginBottom="100dp"/>
+
+            </RelativeLayout>
+
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <ProgressBar
+        android:id="@+id/auhp_simpleProgressBar"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_below="@id/auhp_select_dept"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

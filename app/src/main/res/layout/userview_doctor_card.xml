@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp"
+    android:elevation="5dp"
+    android:layout_margin="20dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="10dp">
+        <TextView
+            android:id="@+id/uvdc_tokenno"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Token No"
+            android:textSize="15dp"
+            android:textColor="?attr/colorOnSurface"
+            android:padding="5dp"
+            android:layout_below="@id/uvdc_date"
+            android:layout_marginTop="10dp"/>
+
+        <TextView
+            android:id="@+id/uvdc_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="date"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="15dp"
+            android:padding="5dp"
+            android:layout_marginTop="10dp" />
+        <TextView
+            android:id="@+id/uvdc_tokentime"
+            android:layout_width="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_height="wrap_content"
+            android:hint="Reporting time"
+            android:textSize="15dp"
+            android:padding="5dp"
+            android:layout_marginTop="10dp"/>
+
+        <TextView
+            android:id="@+id/uvdc_name"
+            android:layout_width="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_height="wrap_content"
+            android:hint="@string/name"
+            android:textSize="15dp"
+            android:padding="5dp"
+            android:layout_marginTop="10dp"/>
+
+        <Button
+            android:id="@+id/uvdc_cancelbooking"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp"
+            android:textColor="?attr/colorOnSurface"
+            android:backgroundTint="@color/grey"
+            android:layout_weight="1"
+            android:text="Cancel Booking" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
