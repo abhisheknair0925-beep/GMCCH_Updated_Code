@@ -62,4 +62,35 @@ class AuthController extends Controller
             ]
         ], 200);
     }
+
+    /**
+     * Hospital Login
+     */
+    public function hospitalLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $hospital = \App\Models\Hospital::where('email', $request->email)->first();
+
+        if (!$hospital || !\Illuminate\Support\Facades\Hash::check($request->password, $hospital->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email or password.'
+            ], 401);
+        }
+
+        $token = $hospital->createToken('hospital-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hospital logged in successfully',
+            'data' => [
+                'hospital' => $hospital,
+                'token' => $token
+            ]
+        ], 200);
+    }
 }

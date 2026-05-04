@@ -2,17 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Hospital extends Model
+class Hospital extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory;
 
-    protected $table = 'tbl_hospital';
+    protected $table = 'hospitals';
 
     protected $fillable = [
         'name',
-        'address',
-        'contact_number',
+        'email',
+        'password',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 }

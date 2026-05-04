@@ -13,6 +13,8 @@ class Unit extends Model
         'doctor_id',
         'name',
         'time',
+        'start_time',
+        'slot_duration',
     ];
 
     public function doctor()

@@ -14,6 +14,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::middleware('throttle:5,1')->group(function () {
         Route::post('/user/login', [AuthController::class, 'userLogin']);
         Route::post('/doctor/login', [AuthController::class, 'doctorLogin']);
+        Route::post('/hospital/login', [AuthController::class, 'hospitalLogin']);
     });
 
     Route::get('/units', [UnitController::class, 'index']);
@@ -34,5 +35,19 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('/doctor/current/{unit_id}', [DoctorController::class, 'getCurrentToken']);
         Route::post('/doctor/call-next', [DoctorController::class, 'callNext']);
         Route::post('/doctor/complete', [DoctorController::class, 'markCompleted']);
+
+        // Hospital Admin Dashboard Endpoints
+        Route::prefix('hospital/dashboard')->group(function () {
+            Route::get('/summary', [\App\Http\Controllers\HospitalDashboardController::class, 'getSummary']);
+            Route::get('/units', [\App\Http\Controllers\HospitalDashboardController::class, 'getUnitStats']);
+            Route::get('/doctors', [\App\Http\Controllers\HospitalDashboardController::class, 'getDoctorStats']);
+        });
+
+        // Hospital Unit Management Endpoints
+        Route::prefix('hospital/units')->group(function () {
+            Route::post('/', [\App\Http\Controllers\HospitalUnitController::class, 'store']);
+            Route::put('/{id}', [\App\Http\Controllers\HospitalUnitController::class, 'update']);
+            Route::delete('/{id}', [\App\Http\Controllers\HospitalUnitController::class, 'destroy']);
+        });
     });
 });
