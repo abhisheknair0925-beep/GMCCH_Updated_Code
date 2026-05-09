@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Mail, Phone, Facebook, Instagram, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, Mail, Phone } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -54,7 +55,7 @@ const Footer = () => {
               
               <div className="mt-8 flex gap-4">
                 <a href="#" className="w-10 h-10 flex items-center justify-center border border-white/20 hover:bg-primary hover:border-primary transition-all rounded-sm text-white">
-                  <Facebook size={16} />
+                  <span className="font-black text-xs">FB</span>
                 </a>
                 <a href="#" className="w-10 h-10 flex items-center justify-center border border-white/20 hover:bg-primary hover:border-primary transition-all rounded-sm text-white">
                   <span className="font-black text-xs">G+</span>
