@@ -27,7 +27,7 @@ class BookingService
             // 1. Global Rule: User can only book ONCE per day (any type or unit)
             $existingBooking = Booking::where('user_id', $userId)
                 ->where('booking_date', $bookingDate)
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending'])
                 ->first();
 
             if ($existingBooking) {
@@ -60,14 +60,20 @@ class BookingService
             $nextToken = $this->calculateToken($nextTokenRaw);
 
             try {
-                // 5. Create Booking
+                // 5. Check auto-approve setting
+                $hospital = \App\Models\Hospital::first();
+                $isAutoApprove = $hospital && $hospital->auto_approve_bookings_until && Carbon::parse($hospital->auto_approve_bookings_until)->isFuture();
+                
+                $status = $isAutoApprove ? 'active' : 'pending';
+
+                // 6. Create Booking
                 return Booking::create([
                     'user_id' => $userId,
                     'unit_id' => $unitId,
                     'type' => $type,
                     'token_number' => $nextToken,
                     'booking_date' => $bookingDate,
-                    'status' => 'active',
+                    'status' => $status,
                 ]);
             } catch (\Illuminate\Database\QueryException $e) {
                 // Error code 23000 is for unique constraint violations (Duplicate Entry)

@@ -1,124 +1,295 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { ArrowRight, Star, ShieldCheck, HeartPulse } from 'lucide-react';
+import { Star, ShieldCheck, HeartPulse, Download, Quote, ExternalLink } from 'lucide-react';
 
+// Actual Google Reviews for Government Medical College Chest and Cancer Hospital, Thrissur
+const REVIEWS = [
+  {
+    name: "Nikhil", initials: "N", avatarColor: "#4285F4",
+    role: "Local Guide · 15 reviews · 65 photos", rating: 3, date: "6 months ago",
+    text: "There are very capable doctors here, but patients have to spend a lot of time waiting to see them.",
+  },
+  {
+    name: "Rahul Ranjith", initials: "RR", avatarColor: "#34A853",
+    role: "Local Guide · 939 reviews · 6534 photos", rating: 3, date: "3 years ago",
+    text: "The chest and cancer division in medical college. People can apply for karunya insurance scheme for the treatment. The patients need their ration card, aadhar card, income certificate, 2 photos, medical details, scan & xray details. Within 24 hrs you will get the card. Friendly doctors. Neethi medical shop is there.",
+  },
+  {
+    name: "Binya Francis", initials: "BF", avatarColor: "#EA4335",
+    role: "Local Guide · 10 reviews · 2 photos", rating: 4, date: "a year ago",
+    text: "Doctors were good but the nurses can be a little more nice. Cleanliness is okay-okay. What's sad is that we can see street dogs and cats even inside the hospital, which are so unhygienic.",
+  },
+  {
+    name: "Alwin James", initials: "AJ", avatarColor: "#FBBC05",
+    role: "Local Guide · 15 reviews · 7 photos", rating: 4, date: "2 years ago",
+    text: "The Government Medical College Chest Hospital is one of the oldest Hospitals in Kerala. The Hospital is situated near to the New Medical College Hospital & Dental College.",
+  },
+  {
+    name: "Biju Ravi", initials: "BR", avatarColor: "#4285F4",
+    role: "247 reviews", rating: 4, date: "2 years ago",
+    text: "One of the best service from government. Cancer treatment one roof is on way at Govt. Medical College in Thrissur where, patients undergoing cancer treatment will no longer have to go to multiple hospitals.",
+  },
+  {
+    name: "Rahul VP", initials: "RV", avatarColor: "#34A853",
+    role: "Local Guide · 153 reviews · 189 photos", rating: 4, date: "8 years ago",
+    text: "Government hospital. Good doctors. Obviously crowded. Staffs also good. Office staffs has to improve their behaviour to patients and their relatives. Neethi medical store should be able to provide all medicines.",
+  },
+  {
+    name: "Bhasi Bahuleyan", initials: "BB", avatarColor: "#EA4335",
+    role: "Local Guide · 1,951 reviews · 20298 photos", rating: 4, date: "8 years ago",
+    text: "More building structures needed urgently.",
+  },
+  {
+    name: "Sachin PS", initials: "SP", avatarColor: "#FBBC05",
+    role: "Local Guide · 7 reviews · 16 photos", rating: 1, date: "8 months ago",
+    text: "I'm really disappointed with the Karunya insurance policy services at Thrissur Chest Hospital. While the doctors and nurses are top-notch, the insurance department is a different story altogether. The waiting time is ridiculously long.",
+  },
+];
+
+// ── Pure presentational sub-components ────────────────────────────────────
+
+/**
+ * SvgAvatar — self-hosted alternative to pravatar.cc.
+ * Renders a colored SVG circle with initials. Zero network requests.
+ */
+const DOCTOR_AVATARS = [
+  { initials: 'AK', bg: '#4f46e5' },
+  { initials: 'SR', bg: '#0891b2' },
+  { initials: 'PM', bg: '#059669' },
+  { initials: 'VN', bg: '#d97706' },
+];
+
+const SvgAvatar = ({ initials, bg }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44">
+    <circle cx="22" cy="22" r="22" fill={bg} />
+    <text
+      x="22" y="22"
+      dominantBaseline="central"
+      textAnchor="middle"
+      fill="white"
+      fontSize="13"
+      fontWeight="800"
+      fontFamily="Plus Jakarta Sans, sans-serif"
+    >
+      {initials}
+    </text>
+  </svg>
+);
+
+const StarRating = ({ count }) => (
+  <div className="star-row">
+    {[1, 2, 3, 4, 5].map(i => (
+      <Star key={i} size={14} fill={i <= count ? '#FBBF24' : 'transparent'} color={i <= count ? '#FBBF24' : '#D1D5DB'} />
+    ))}
+  </div>
+);
+
+// Avatar background color is dynamic (per reviewer) so we keep only that one inline style
+const InitialsAvatar = ({ initials, color }) => (
+  <div className="initials-avatar" style={{ background: color }}>
+    {initials}
+  </div>
+);
+
+const GOOGLE_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/24px-Google_%22G%22_logo.svg.png";
+const REVIEW_URL  = "https://www.google.com/search?sca_esv=55117bfb786c3fb6&si=AL3DRZHrmvnFAVQPOO2Bzhf8AX9KZZ6raUI_dT7DG_z0kV2_x7N5Kx8xRdty5DVShoC9uzqQ8WTLIROeDOA8B6_hbwiRnyRXRk8KcYdVL-gNKm8V1fMekpMfD9m0KEUDhVZnK6qBfHkJftEg9sHztrxMGLqAxWHhhfr6uXkPr7cT89F1MLvkIS26UOzTrh9VvYXUm_xJaRKT&q=Government+Medical+College+Chest+and+cancer+Hospital,+Thrissur+Reviews&sa=X&ved=2ahUKEwjproLJwqyUAxVlS3ADHegnMvIQ0bkNegQILhAH";
+
+// ── Page Component ─────────────────────────────────────────────────────────
 const Home = () => {
+  useEffect(() => {
+    document.title = 'GMCC Hospital Thrissur | Token Management System';
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden bg-[#fff] min-h-[600px] flex items-center">
-          <div className="container grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-            <div className="reveal">
-              <span className="badge badge-primary mb-4">Quality Care Always</span>
-              <h1 className="text-5xl lg:text-7xl font-black mb-6 leading-tight">
+  <div className="home-shell">
+    <Header />
+
+    <main className="home-main">
+
+      {/* ─── Hero Section ─── */}
+      <section className="hero-section">
+        <div className="container">
+          <div className="hero-grid">
+
+            {/* Left — copy */}
+            <div className="hero-left">
+              <span className="hero-badge">Making Your Life Easy and Happy</span>
+
+              <h1 className="hero-h1">
                 For A Better <br />
-                <span className="text-primary">Treatment</span>
+                <span className="hero-h1-accent">Treatment</span>
               </h1>
-              <p className="text-xl text-secondary mb-8 max-w-lg">
-                Medical College Chest Hospital Thrissur provides world-class medical facilities and professional care for all respiratory and chest-related health needs.
+
+              <p className="hero-desc">
+                Government Medical College Chest and Cancer Hospital, Thrissur — delivering quality respiratory and oncological care since 1982.
               </p>
-              <div className="flex gap-4">
-                <button className="btn btn-primary px-8 py-4 text-lg">
-                  Book Appointment <ArrowRight size={20} className="ml-2" />
-                </button>
-                <button className="btn btn-secondary px-8 py-4 text-lg">
+
+              <div className="hero-actions">
+                <a href="https://play.google.com/store/apps/details?id=gmcch.vast.token" className="btn btn-primary hero-btn-primary">
+                  Download App <Download size={18} />
+                </a>
+                <a href="#about" className="hero-btn-outline">
                   Learn More
-                </button>
+                </a>
               </div>
-              
-              <div className="mt-12 flex items-center gap-6">
-                <div className="flex -space-x-4">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="w-12 h-12 rounded-full border-4 border-white overflow-hidden bg-gray-200">
-                      <img src={`https://i.pravatar.cc/150?u=doc${i}`} alt="doc" />
+
+              {/* Social proof */}
+              <div className="hero-proof">
+                <div className="hero-avatars">
+                  {DOCTOR_AVATARS.map((doc, i) => (
+                    <div key={i} className="hero-avatar">
+                      <SvgAvatar initials={doc.initials} bg={doc.bg} />
                     </div>
                   ))}
                 </div>
                 <div>
-                  <p className="m-0 font-bold text-text-primary">50+ Professional Doctors</p>
-                  <div className="flex text-yellow-400 gap-1">
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}
-                    <span className="text-xs text-secondary ml-2">(4.9/5 Rating)</span>
+                  <p className="hero-proof-label">50+ Professional Doctors</p>
+                  <div className="hero-star-row">
+                    {[1,2,3,4,5].map(i => <Star key={i} size={13} fill="#FBBF24" color="#FBBF24" />)}
+                    <span className="hero-rating-text">4.4 on Google</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative reveal" style={{ animationDelay: '0.2s' }}>
-              <div className="absolute -inset-4 bg-primary/10 rounded-full blur-3xl"></div>
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-8 border-white">
-                <img src="/images/doctor-banner.png" alt="Doctor Banner" className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-700" />
+            {/* Right — image */}
+            <div className="hero-right">
+              <div className="hero-glow" />
+              <div className="hero-img-wrap">
+                <img src="/images/doctor-banner.png" alt="Doctor at GMCCH" />
               </div>
-              {/* Floating Cards */}
-              <div className="absolute top-10 -left-10 glass-panel p-4 flex items-center gap-3 animate-bounce">
-                <div className="bg-primary p-2 rounded-lg text-white"><ShieldCheck size={20} /></div>
+
+              {/* Floating: Verified Hospital */}
+              <div className="hero-badge-card hero-badge-card--tl">
+                <div className="hero-badge-icon hero-badge-icon--pink"><ShieldCheck size={18} /></div>
                 <div>
-                  <p className="m-0 text-xs font-bold text-text-primary">Secured Systems</p>
-                  <p className="m-0 text-[10px] text-secondary">Verified Facility</p>
+                  <p className="hero-badge-title">Verified Hospital</p>
+                  <p className="hero-badge-sub">Govt. Accredited</p>
                 </div>
               </div>
-              <div className="absolute bottom-10 -right-10 glass-panel p-4 flex items-center gap-3" style={{ animation: 'bounce 3s infinite' }}>
-                <div className="bg-accent p-2 rounded-lg text-white"><HeartPulse size={20} /></div>
+
+              {/* Floating: 24/7 Emergency */}
+              <div className="hero-badge-card hero-badge-card--br">
+                <div className="hero-badge-icon hero-badge-icon--dark"><HeartPulse size={18} /></div>
                 <div>
-                  <p className="m-0 text-xs font-bold text-text-primary">Emergency 24/7</p>
-                  <p className="m-0 text-[10px] text-secondary">Ready to help</p>
+                  <p className="hero-badge-title">24/7 Emergency</p>
+                  <p className="hero-badge-sub">Always Ready</p>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* About Us Section */}
-        <section id="about" className="section-padding bg-white">
-          <div className="container">
-            <h2 className="text-center text-4xl font-black text-primary uppercase mb-16 tracking-widest">About Us</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div className="reveal">
-                <div className="rounded-xl overflow-hidden shadow-2xl">
-                  <img src="/images/hospital-building.png" alt="Hospital Building" className="w-full h-auto" />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── About Us Section ─── */}
+      <section id="about" className="about-section">
+        <div className="container">
+          <h2 className="about-heading">About Us</h2>
+          <div className="about-grid">
+            <div className="about-img-wrap">
+              <img src="/images/hospital-building.png" alt="GMCCH Building" />
+            </div>
+            <div>
+              <h3 className="about-h3">Government Medical College Chest and Cancer Hospital, Thrissur</h3>
+              <p className="about-p">
+                Inaugurated on 1 April 1982 by the Governor of Kerala Jothi Venkatachalam, the hospital began at Mannuthy and moved to its permanent site at Mulakunnathukavu by March 1983. Today it stands as one of Kerala's premier institutions for respiratory and oncological treatment.
+              </p>
+              <div className="about-accent-bar" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Google Reviews Section ─── */}
+      <section className="reviews-section">
+        <div className="container">
+
+          {/* Header row */}
+          <div className="reviews-header">
+            <div>
+              <h2 className="reviews-h2">Patient Reviews</h2>
+              <div className="reviews-meta">
+                <img src={GOOGLE_LOGO} alt="Google" width={22} height={22} />
+                <span className="reviews-meta-text">Based on Google Reviews</span>
+                <StarRating count={4} />
+                <span className="reviews-rating-val">4.4</span>
+                <span className="reviews-rating-count">(200+ reviews)</span>
+              </div>
+            </div>
+            <a href={REVIEW_URL} target="_blank" rel="noopener noreferrer" className="reviews-link-btn">
+              View All Reviews <ExternalLink size={15} />
+            </a>
+          </div>
+
+          {/* Cards */}
+          <div className="reviews-grid">
+            {REVIEWS.map((review, idx) => (
+              <div key={idx} className="review-card">
+                <div className="review-card-top">
+                  <div className="review-card-author">
+                    <InitialsAvatar initials={review.initials} color={review.avatarColor} />
+                    <div>
+                      <p className="review-name">{review.name}</p>
+                      <p className="review-role">{review.role}</p>
+                      <p className="review-date">{review.date}</p>
+                    </div>
+                  </div>
+                  <img src={GOOGLE_LOGO} alt="Google" className="review-g-logo" />
+                </div>
+
+                <StarRating count={review.rating} />
+
+                <div className="review-quote-wrap">
+                  <Quote size={18} className="review-quote-icon" />
+                  <p className="review-text">{review.text}</p>
                 </div>
               </div>
-              
-              <div className="reveal" style={{ animationDelay: '0.2s' }}>
-                <p className="text-lg leading-relaxed text-black mb-6">
-                  Medical college chest hospital was inaugurated on 1 April 1982 by the Governor of Kerala Jothi Venkatachalam. G. M. C, Thrissur had its humble beginning at Mannuthy. By March 1983, the institution had moved to its permanent site at Mulakunnathukavu, where the old buildings of the T.B. sanatorium were modified to accommodate the pre-clinical and the para-clinical departments as well as the administrative block.
-                </p>
-                <div className="w-full h-1 bg-black/10 mt-8"></div>
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
 
-        {/* Call to Action */}
-        <section className="section-padding bg-primary text-white text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full opacity-10">
-             {/* Abstract BG lines */}
-             <svg width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 100 Q 500 0 1000 100" stroke="white" strokeWidth="2" />
-                <path d="M0 200 Q 500 100 1000 200" stroke="white" strokeWidth="2" />
-             </svg>
+          {/* Write Review CTA */}
+          <div className="review-cta">
+            <h3 className="review-cta-h3">Share Your Experience</h3>
+            <p className="review-cta-p">Your feedback helps us improve and helps others make informed decisions.</p>
+            <a
+              href="https://www.google.com/search?q=Government+Medical+College+Chest+and+cancer+Hospital+Thrissur"
+              target="_blank" rel="noopener noreferrer"
+              className="btn btn-primary review-cta-btn"
+            >
+              Write a Google Review <ExternalLink size={16} />
+            </a>
           </div>
-          <div className="container relative z-10">
-            <h2 className="text-4xl lg:text-5xl font-black mb-6 text-white">Experience Better Healthcare Today</h2>
-            <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-              Join thousands of residents who trust MCC Hospital for their respiratory health and diagnostic needs.
-            </p>
-            <div className="flex justify-center gap-6">
-              <button className="btn bg-white text-primary hover:bg-secondary hover:text-white px-10 py-4 text-lg font-bold shadow-2xl">
-                Get Your Token Now
-              </button>
-            </div>
-          </div>
-        </section>
-      </main>
 
-      <Footer />
-    </div>
+        </div>
+      </section>
+
+      {/* ─── CTA Banner Section ─── */}
+      <section className="cta-section">
+        <div className="cta-bg-svg">
+          <svg width="100%" height="100%" viewBox="0 0 200 100" preserveAspectRatio="none">
+            <path d="M0 50 Q 100 0 200 50 T 400 50" stroke="white" fill="transparent" strokeWidth="1" />
+            <path d="M0 70 Q 100 20 200 70 T 400 70" stroke="white" fill="transparent" strokeWidth="1" />
+          </svg>
+        </div>
+        <div className="container cta-inner">
+          <h2 className="cta-h2">Experience Better Healthcare</h2>
+          <p className="cta-p">
+            Join thousands of patients from across Kerala who trust GMCCH Thrissur for world-class respiratory and cancer care.
+          </p>
+          <a href="https://play.google.com/store/apps/details?id=gmcch.vast.token" className="cta-btn">
+            Download Patient App <Download size={20} />
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+    <Footer />
+  </div>
   );
 };
+
 
 export default Home;

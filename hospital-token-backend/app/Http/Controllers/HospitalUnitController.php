@@ -22,13 +22,15 @@ class HospitalUnitController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'doctor_id' => 'required|exists:doctors,id',
+            'day' => 'required|string|max:255',
+            'doctor_id' => 'nullable|exists:doctors,id',
             'start_time' => 'nullable|date_format:H:i:s',
             'slot_duration' => 'nullable|integer|min:1',
         ]);
 
         $unit = Unit::create([
             'name' => $request->name,
+            'day' => $request->day,
             'doctor_id' => $request->doctor_id,
             'start_time' => $request->start_time ?? '09:00:00',
             'slot_duration' => $request->slot_duration ?? 5,
@@ -51,12 +53,13 @@ class HospitalUnitController extends Controller
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
-            'doctor_id' => 'sometimes|exists:doctors,id',
+            'day' => 'sometimes|string|max:255',
+            'doctor_id' => 'nullable|exists:doctors,id',
             'start_time' => 'sometimes|date_format:H:i:s',
             'slot_duration' => 'sometimes|integer|min:1',
         ]);
 
-        $unit->update($request->only(['name', 'doctor_id', 'start_time', 'slot_duration']));
+        $unit->update($request->only(['name', 'day', 'doctor_id', 'start_time', 'slot_duration']));
 
         Cache::forget('hospital_units');
 
@@ -73,7 +76,6 @@ class HospitalUnitController extends Controller
 
         $unit = Unit::findOrFail($id);
 
-        // Safety check: Block deletion if there are active bookings
         $activeBookings = $unit->bookings()->where('status', 'active')->count();
 
         if ($activeBookings > 0) {

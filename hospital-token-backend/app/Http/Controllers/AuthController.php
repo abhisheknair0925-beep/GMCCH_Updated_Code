@@ -69,8 +69,8 @@ class AuthController extends Controller
     public function hospitalLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+            'email'    => 'required|email',
+            'password' => 'required|min:8',
         ]);
 
         $hospital = \App\Models\Hospital::where('email', $request->email)->first();

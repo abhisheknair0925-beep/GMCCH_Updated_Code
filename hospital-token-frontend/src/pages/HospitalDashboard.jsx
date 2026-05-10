@@ -1,147 +1,393 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/axios';
-import { LayoutDashboard, Users, Activity, CheckCircle, LogOut } from 'lucide-react';
+import { dashboardCache, CACHE_KEYS } from '../lib/dashboardCache';
+import { LayoutDashboard, Users, Stethoscope, Layers, LogOut, RefreshCw, Menu as MenuIcon, X } from 'lucide-react';
+
+import OverviewTab from '../components/dashboard/OverviewTab';
+import UserTab     from '../components/dashboard/UserTab';
+import DoctorTab   from '../components/dashboard/DoctorTab';
+import UnitTab     from '../components/dashboard/UnitTab';
+import BookingTab  from '../components/dashboard/BookingTab';
+
+const NAV = [
+    { id: 'overview', label: 'Overview',        icon: LayoutDashboard },
+    { id: 'users',    label: 'Users',            icon: Users           },
+    { id: 'doctors',  label: 'Doctors',          icon: Stethoscope     },
+    { id: 'units',    label: 'Units',            icon: Layers          },
+    { id: 'bookings', label: 'Bookings',         icon: LayoutDashboard },
+];
 
 const HospitalDashboard = () => {
-    const [hospital, setHospital] = useState(null);
-    const [summary, setSummary] = useState(null);
-    const [units, setUnits] = useState([]);
-    const [doctors, setDoctors] = useState([]);
+    const [hospital,    setHospital]    = useState(null);
+    const [summary,     setSummary]     = useState(null);
+    const [units,       setUnits]       = useState([]);
+    const [activeTab,   setActiveTab]   = useState('overview');
+    const [mobileOpen,  setMobileOpen]  = useState(false);
+    const [loadError,   setLoadError]   = useState(false);
+    const [refreshing,  setRefreshing]  = useState(false);
+    const [lastUpdated, setLastUpdated] = useState(null);
+
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const storedAdmin = localStorage.getItem('hospital');
-        if (!storedAdmin) {
-            navigate('/');
-            return;
+    const fetchData = useCallback(async (force = false) => {
+        if (!force) {
+            const cachedSummary = dashboardCache.get(CACHE_KEYS.SUMMARY);
+            const cachedUnits   = dashboardCache.get(CACHE_KEYS.UNITS);
+            if (cachedSummary && cachedUnits) {
+                setSummary(cachedSummary);
+                setUnits(cachedUnits);
+                setLoadError(false);
+                const age = dashboardCache.getAge(CACHE_KEYS.SUMMARY);
+                if (age !== null) setLastUpdated(new Date(Date.now() - age * 1000));
+                return;
+            }
         }
-        setHospital(JSON.parse(storedAdmin));
-        fetchDashboardData();
-    }, [navigate]);
-
-    const fetchDashboardData = async () => {
+        setRefreshing(true);
         try {
-            const [sumRes, unitRes, docRes] = await Promise.all([
+            const [sumRes, unitRes] = await Promise.all([
                 api.get('/hospital/dashboard/summary'),
                 api.get('/hospital/dashboard/units'),
-                api.get('/hospital/dashboard/doctors')
             ]);
-            
-            if (sumRes.data.success) setSummary(sumRes.data.data);
-            if (unitRes.data.success) setUnits(unitRes.data.data);
-            if (docRes.data.success) setDoctors(docRes.data.data);
-        } catch (err) {
-            console.error("Failed to fetch dashboard data", err);
+            const summaryData = sumRes.data.success  ? sumRes.data.data  : null;
+            const unitsData   = unitRes.data.success ? unitRes.data.data : [];
+            if (summaryData) { dashboardCache.set(CACHE_KEYS.SUMMARY, summaryData); setSummary(summaryData); }
+            dashboardCache.set(CACHE_KEYS.UNITS, unitsData);
+            setUnits(unitsData);
+            setLoadError(false);
+            setLastUpdated(new Date());
+        } catch {
+            setLoadError(true);
+        } finally {
+            setRefreshing(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        document.title = 'Admin Dashboard — GMCC Hospital Thrissur';
+        const stored = localStorage.getItem('hospital');
+        if (!stored) { navigate('/'); return; }
+        setHospital(JSON.parse(stored));
+        fetchData();
+    }, [navigate, fetchData]);
+
+    const handleMutation = useCallback(() => {
+        dashboardCache.invalidate(CACHE_KEYS.SUMMARY);
+        dashboardCache.invalidate(CACHE_KEYS.UNITS);
+        fetchData(true);
+    }, [fetchData]);
 
     const handleLogout = () => {
+        dashboardCache.invalidateAll();
         localStorage.removeItem('token');
         localStorage.removeItem('hospital');
-        navigate('/');
+        navigate('/login');
     };
 
-    if (!hospital || !summary) return <div className="auth-container">Loading Dashboard...</div>;
+    const handleManualRefresh = () => {
+        dashboardCache.invalidate(CACHE_KEYS.SUMMARY);
+        dashboardCache.invalidate(CACHE_KEYS.UNITS);
+        fetchData(true);
+        setMobileOpen(false);
+    };
+
+    const switchTab = (id) => {
+        setActiveTab(id);
+        setMobileOpen(false);
+    };
+
+    if (!hospital) return <LoadingScreen />;
+    if (loadError)  return <ErrorScreen onRetry={() => fetchData(true)} onLogout={handleLogout} />;
 
     return (
-        <div className="app-container animate-fade-in">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', marginRight: '1rem' }}>
-                        <LayoutDashboard size={24} color="var(--accent-color)" />
-                    </div>
+        <div style={css.shell}>
+
+            {/* ══════════════════ HORIZONTAL TOP NAVBAR ══════════════════ */}
+            <header style={css.navbar}>
+                {/* Left — Logo */}
+                <div style={css.navLeft}>
+                    <img src="/images/g11.png" alt="GMCCH Logo" style={{ height: '34px', flexShrink: 0 }} />
                     <div>
-                        <h1 style={{ margin: 0, lineHeight: 1 }}>{hospital.name}</h1>
-                        <p style={{ margin: 0, fontSize: '0.9rem', marginTop: '0.25rem' }}>Administrator Dashboard</p>
+                        <div style={css.brandName}>GMCCH</div>
+                        <div style={css.brandSub}>Admin Panel</div>
                     </div>
                 </div>
-                <button onClick={handleLogout} className="btn btn-secondary">
-                    <LogOut size={18} style={{ marginRight: '0.5rem' }} /> Logout
-                </button>
+
+                {/* Centre — Nav tabs (desktop) */}
+                <nav style={css.navTabs}>
+                    {NAV.map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => switchTab(id)}
+                            style={{ ...css.tab, ...(activeTab === id ? css.tabActive : {}) }}
+                        >
+                            <Icon size={15} />
+                            {label}
+                        </button>
+                    ))}
+                </nav>
+
+                {/* Right — Refresh + last updated + logout (desktop) */}
+                <div style={css.navRight}>
+                    {lastUpdated && (
+                        <span style={css.updatedText}>Updated {formatAge(lastUpdated)}</span>
+                    )}
+                    <button
+                        onClick={handleManualRefresh}
+                        disabled={refreshing}
+                        style={css.refreshBtn}
+                        title="Refresh data"
+                    >
+                        <RefreshCw size={14} style={{ animation: refreshing ? 'dashSpin 0.8s linear infinite' : 'none' }} />
+                        {refreshing ? 'Refreshing…' : 'Refresh'}
+                    </button>
+                    <button onClick={handleLogout} style={css.logoutBtn} title="Sign out">
+                        <LogOut size={15} />
+                        Sign Out
+                    </button>
+                    {/* Mobile hamburger */}
+                    <button onClick={() => setMobileOpen(o => !o)} style={css.hamburger} className="dash-hamburger">
+                        {mobileOpen ? <X size={20} /> : <MenuIcon size={20} />}
+                    </button>
+                </div>
             </header>
 
-            {/* KPI Summary Cards */}
-            <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>Today's Overview</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-                <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                        <p style={{ margin: 0, fontWeight: 500 }}>Total Bookings</p>
-                        <Users size={20} color="var(--accent-color)" />
-                    </div>
-                    <h2 style={{ margin: 0, fontSize: '2.5rem' }}>{summary.today.total}</h2>
+            {/* ══════════════════ MOBILE DROPDOWN NAV ══════════════════ */}
+            {mobileOpen && (
+                <div style={css.mobileMenu} className="dash-mobile-menu">
+                    {NAV.map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => switchTab(id)}
+                            style={{ ...css.mobileItem, ...(activeTab === id ? css.mobileItemActive : {}) }}
+                        >
+                            <Icon size={16} /> {label}
+                        </button>
+                    ))}
+                    <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '0.25rem 0' }} />
+                    <button onClick={handleManualRefresh} style={css.mobileItem} disabled={refreshing}>
+                        <RefreshCw size={16} style={{ animation: refreshing ? 'dashSpin 0.8s linear infinite' : 'none' }} />
+                        {refreshing ? 'Refreshing…' : 'Refresh Data'}
+                    </button>
+                    <button onClick={handleLogout} style={{ ...css.mobileItem, color: '#ef4444' }}>
+                        <LogOut size={16} /> Sign Out
+                    </button>
                 </div>
-                
-                <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                        <p style={{ margin: 0, fontWeight: 500 }}>Active Queue</p>
-                        <Activity size={20} color="var(--warning-color)" />
-                    </div>
-                    <h2 style={{ margin: 0, fontSize: '2.5rem' }}>{summary.today.active}</h2>
-                </div>
+            )}
 
-                <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                        <p style={{ margin: 0, fontWeight: 500 }}>Completed</p>
-                        <CheckCircle size={20} color="var(--success-color)" />
-                    </div>
-                    <h2 style={{ margin: 0, fontSize: '2.5rem' }}>{summary.today.completed}</h2>
-                </div>
-            </div>
+            {/* ══════════════════ MAIN CONTENT ══════════════════════════ */}
+            <main style={css.main}>
+                {!summary ? (
+                    <p style={{ color: '#94a3b8', padding: '2rem' }}>Loading data…</p>
+                ) : (
+                    <>
+                        {activeTab === 'overview' && <OverviewTab hospital={hospital} summary={summary} units={units} />}
+                        {activeTab === 'users'    && <UserTab />}
+                        {activeTab === 'doctors'  && <DoctorTab units={units} onDoctorAdded={handleMutation} />}
+                        {activeTab === 'units'    && <UnitTab units={units} onUnitAdded={handleMutation} />}
+                        {activeTab === 'bookings' && <BookingTab onBookingChanged={handleMutation} />}
+                    </>
+                )}
+            </main>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
-                
-                {/* Unit Tracking */}
-                <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Unit Queues</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {units.map(unit => (
-                            <div key={unit.unit_id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <h4 style={{ margin: 0 }}>{unit.unit_name}</h4>
-                                    <span className="badge badge-active">{unit.today.pending} Pending</span>
-                                </div>
-                                <p style={{ fontSize: '0.85rem', margin: 0 }}>Assigned: {unit.doctor_name}</p>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '0.85rem' }}>
-                                    <div><strong style={{ color: 'var(--success-color)' }}>{unit.today.completed}</strong> Completed</div>
-                                    <div><strong>{unit.today.chemo}</strong> Chemo</div>
-                                    <div><strong>{unit.today.normal}</strong> Normal</div>
-                                </div>
-                            </div>
-                        ))}
-                        {units.length === 0 && <p>No active unit data.</p>}
-                    </div>
-                </div>
+            <style>{`
+                @keyframes dashSpin { to { transform: rotate(360deg); } }
 
-                {/* Doctor Workload */}
-                <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Doctor Workload</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {doctors.map(doctor => (
-                            <div key={doctor.doctor_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                                <div>
-                                    <h4 style={{ margin: 0, marginBottom: '0.25rem' }}>{doctor.doctor_name}</h4>
-                                    <p style={{ fontSize: '0.85rem', margin: 0 }}>Units Assigned: {doctor.total_assigned_units}</p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '1rem', textAlign: 'center' }}>
-                                    <div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--success-color)' }}>{doctor.today_patients_seen}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Seen</div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--warning-color)' }}>{doctor.today_patients_waiting}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Waiting</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {doctors.length === 0 && <p>No active doctor data.</p>}
-                    </div>
-                </div>
+                /* Hide hamburger on desktop, show nav tabs */
+                .dash-hamburger    { display: none !important; }
+                .dash-mobile-menu  { display: none !important; }
 
-            </div>
+                @media (max-width: 768px) {
+                    .dash-hamburger   { display: flex !important; }
+                    .dash-mobile-menu { display: flex !important; }
+                    /* Hide desktop nav + right controls (except hamburger) */
+                    [data-desk]       { display: none !important; }
+                }
+            `}</style>
         </div>
     );
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function formatAge(date) {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 10)  return 'just now';
+    if (s < 60)  return `${s}s ago`;
+    if (s < 120) return '1 min ago';
+    return `${Math.floor(s / 60)} mins ago`;
+}
+
+// ── Screens ────────────────────────────────────────────────────────────────
+const LoadingScreen = () => (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#94a3b8' }}>Loading dashboard…</p>
+    </div>
+);
+
+const ErrorScreen = ({ onRetry, onLogout }) => (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+        <p style={{ color: '#ef4444', fontWeight: 700 }}>⚠️ Could not connect to the server.</p>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={onRetry}  style={{ padding: '0.6rem 1.25rem', background: '#ff0088', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Retry</button>
+            <button onClick={onLogout} style={{ padding: '0.6rem 1.25rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Logout</button>
+        </div>
+    </div>
+);
+
+// ── Styles ─────────────────────────────────────────────────────────────────
+const css = {
+    shell: {
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#f8fafc',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+    },
+
+    /* ── Top Navbar ── */
+    navbar: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        padding: '0 1.5rem',
+        height: '60px',
+        background: 'white',
+        borderBottom: '1px solid #e2e8f0',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+    },
+
+    navLeft: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+        flexShrink: 0,
+    },
+    brandName: { fontWeight: 900, fontSize: '0.9rem', color: '#0f172a', lineHeight: 1.1 },
+    brandSub:  { fontSize: '0.58rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' },
+
+    /* Horizontal nav tabs */
+    navTabs: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.25rem',
+        flex: 1,
+        justifyContent: 'center',
+    },
+    tab: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        padding: '0.45rem 0.9rem',
+        borderRadius: '8px',
+        border: 'none',
+        background: 'none',
+        cursor: 'pointer',
+        fontWeight: 600,
+        color: '#64748b',
+        fontSize: '0.82rem',
+        fontFamily: 'inherit',
+        whiteSpace: 'nowrap',
+        transition: 'background 0.15s, color 0.15s',
+    },
+    tabActive: {
+        background: '#ff0088',
+        color: 'white',
+        boxShadow: '0 3px 10px rgba(255,0,136,0.25)',
+    },
+
+    navRight: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        flexShrink: 0,
+    },
+    updatedText: {
+        fontSize: '0.68rem',
+        color: '#94a3b8',
+        whiteSpace: 'nowrap',
+    },
+    refreshBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.35rem',
+        padding: '0.4rem 0.85rem',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        background: '#f8fafc',
+        cursor: 'pointer',
+        color: '#475569',
+        fontWeight: 600,
+        fontSize: '0.75rem',
+        fontFamily: 'inherit',
+        whiteSpace: 'nowrap',
+    },
+    logoutBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.35rem',
+        padding: '0.4rem 0.85rem',
+        border: '1px solid #fee2e2',
+        borderRadius: '8px',
+        background: '#fff5f5',
+        cursor: 'pointer',
+        color: '#ef4444',
+        fontWeight: 700,
+        fontSize: '0.75rem',
+        fontFamily: 'inherit',
+        whiteSpace: 'nowrap',
+    },
+    hamburger: {
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#475569',
+        padding: '0.3rem',
+        display: 'flex',
+    },
+
+    /* Mobile dropdown */
+    mobileMenu: {
+        flexDirection: 'column',
+        background: 'white',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '0.5rem 1rem',
+        gap: '0.1rem',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    },
+    mobileItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+        width: '100%',
+        padding: '0.7rem 0.75rem',
+        border: 'none',
+        borderRadius: '8px',
+        background: 'none',
+        cursor: 'pointer',
+        fontWeight: 600,
+        color: '#475569',
+        fontSize: '0.875rem',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+    },
+    mobileItemActive: {
+        background: '#fff5fa',
+        color: '#ff0088',
+    },
+
+    /* Main content — full width, no offset needed */
+    main: {
+        flex: 1,
+        padding: '1.75rem 1.5rem',
+        maxWidth: '1280px',
+        width: '100%',
+        margin: '0 auto',
+        boxSizing: 'border-box',
+    },
 };
 
 export default HospitalDashboard;

@@ -12,6 +12,7 @@ class Unit extends Model
     protected $fillable = [
         'doctor_id',
         'name',
+        'day',
         'time',
         'start_time',
         'slot_duration',

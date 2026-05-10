@@ -1,73 +1,202 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Clock, Calendar, Menu } from 'lucide-react';
+import { Phone, Menu, X, Smartphone } from 'lucide-react';
 
 const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <header className="w-full">
-      {/* 1. Header Top */}
-      <div className="header-top text-black">
-        <div className="container flex justify-center items-center py-2">
-          <span className="text-[15px] font-bold tracking-tight">Medical College Chest Hospital Thrissur</span>
-        </div>
+    <>
+      {/* ── Top Info Bar ── */}
+      <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '0.4rem 0', textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.02em' }}>
+          Government Medical College Chest and Cancer Hospital, Thrissur
+        </p>
       </div>
 
-      {/* 2. Main Navbar */}
-      <nav className="navbar py-4">
-        <div className="container flex justify-between items-center">
-          <Link to="/" className="flex items-center gap-4">
-            <img src="/images/logo.png" alt="MCC Logo" className="h-16 w-auto" />
-            <div className="hidden sm:block">
-              <h1 className="m-0 text-3xl font-black text-black leading-none">MCC HOSPITAL</h1>
-              <p className="m-0 text-[11px] text-primary font-bold tracking-[0.2em] uppercase">For A Better Treatment</p>
-            </div>
-          </Link>
-          
-          <div className="hidden lg:flex items-center gap-10">
-            <Link to="/" className="font-bold text-[13px] hover:text-primary transition-colors text-primary">HOME</Link>
-            <Link to="/#about" className="font-bold text-[13px] hover:text-primary transition-colors text-secondary-text">ABOUT US</Link>
-            <Link to="/#contact" className="font-bold text-[13px] hover:text-primary transition-colors text-secondary-text">CONTACT US</Link>
-          </div>
+      {/* ── Main Navbar ── */}
+      <nav style={{
+        background: 'white',
+        borderBottom: '1px solid #e2e8f0',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+      }}>
+        <div className="container" style={{ padding: '0 1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
 
-          <button className="lg:hidden p-2 text-primary">
-            <Menu size={24} />
-          </button>
+            {/* Logo + Name */}
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+              <img src="/images/g11.png" alt="GMCCH Logo" style={{ height: '40px', width: 'auto' }} />
+              <div>
+                <div style={{ fontWeight: 900, fontSize: '0.95rem', color: '#0f172a', lineHeight: 1, letterSpacing: '-0.01em' }}>GMCCH THRISSUR</div>
+                <div style={{ fontWeight: 700, fontSize: '0.6rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>Chest &amp; Cancer Hospital</div>
+              </div>
+            </Link>
+
+            {/* Desktop Nav Links */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }} className="desktop-nav">
+              <NavLink to="/" label="Home" />
+              <NavLink href="#about" label="About" />
+              <NavLink href="#contact" label="Contact" />
+              <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 0.5rem' }} />
+              <Link to="/login" style={{
+                display: 'inline-flex', alignItems: 'center',
+                padding: '0.5rem 1.25rem',
+                borderRadius: '8px',
+                background: 'var(--primary)',
+                color: 'white',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'opacity 0.2s'
+              }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                Admin Portal
+              </Link>
+            </div>
+
+            {/* Hamburger */}
+            <button
+              className="hamburger-btn"
+              onClick={() => setIsMenuOpen(true)}
+              aria-label="Open menu"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: '#0f172a' }}
+            >
+              <Menu size={22} />
+            </button>
+          </div>
         </div>
       </nav>
 
-      {/* 3. Header Down */}
-      <div className="header-down py-3">
-        <div className="container flex flex-wrap justify-between items-center gap-6">
-          <div className="flex items-center gap-10 text-sm font-bold text-white">
-            <span className="flex items-center gap-3">
-              <Phone size={18} fill="white" />
-              <div>
-                <p className="m-0 leading-none">Call 0487-2200610</p>
-                <p className="m-0 text-[10px] opacity-80 uppercase">Ask for Doctor</p>
-              </div>
-            </span>
-            <span className="hidden md:flex items-center gap-3">
-              <Clock size={18} fill="white" />
-              <div>
-                <p className="m-0 leading-none">Open Hours</p>
-                <p className="m-0 text-[10px] opacity-80 uppercase">Mon-Sun (24 hrs)</p>
-              </div>
-            </span>
-            <span className="hidden lg:flex items-center gap-3">
-              <Calendar size={18} fill="white" />
-              <div>
-                <p className="m-0 leading-none">For an Appointment</p>
-                <p className="m-0 text-[10px] opacity-80 uppercase">Book Now</p>
-              </div>
-            </span>
+      {/* ── Emergency Bar ── */}
+      <div style={{ background: 'var(--primary)', padding: '0.5rem 0' }}>
+        <div className="container" style={{ padding: '0 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white' }}>
+            <Phone size={14} />
+            <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>0487-2200610</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '0.25rem' }}>· Emergency 24/7</span>
           </div>
-          <Link to="/login" className="bg-white text-primary hover:bg-secondary hover:text-white transition-all py-2 px-8 rounded-md text-[13px] font-black uppercase shadow-xl">
-            Book Now
-          </Link>
+          <a
+            href="https://play.google.com/store/apps/details?id=gmcch.vast.token"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              background: 'white', color: 'var(--primary)',
+              padding: '0.35rem 1rem', borderRadius: '6px',
+              fontSize: '0.75rem', fontWeight: 800, textDecoration: 'none',
+              letterSpacing: '0.02em'
+            }}
+          >
+            <Smartphone size={13} /> Book via App
+          </a>
         </div>
       </div>
-    </header>
+
+      {/* ── Mobile Drawer ── */}
+      {/* Overlay */}
+      {isMenuOpen && (
+        <div
+          onClick={() => setIsMenuOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(4px)', zIndex: 200
+          }}
+        />
+      )}
+
+      {/* Drawer Panel */}
+      <div style={{
+        position: 'fixed', top: 0, right: 0, bottom: 0,
+        width: '280px',
+        background: 'white',
+        zIndex: 300,
+        display: 'flex', flexDirection: 'column',
+        transform: isMenuOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: '-20px 0 60px rgba(0,0,0,0.15)'
+      }}>
+        {/* Drawer Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <img src="/images/g11.png" alt="Logo" style={{ height: '32px' }} />
+            <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#0f172a' }}>GMCCH</div>
+          </div>
+          <button onClick={() => setIsMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.25rem' }}>
+            <X size={22} />
+          </button>
+        </div>
+
+        {/* Nav Items */}
+        <nav style={{ padding: '1rem 0', flexGrow: 1 }}>
+          <DrawerLink to="/" label="Home" onClick={() => setIsMenuOpen(false)} />
+          <DrawerLink href="#about" label="About Us" onClick={() => setIsMenuOpen(false)} />
+          <DrawerLink href="#contact" label="Contact Us" onClick={() => setIsMenuOpen(false)} />
+          <div style={{ margin: '0.5rem 1.5rem', height: '1px', background: '#f1f5f9' }} />
+          <DrawerLink to="/login" label="Admin Login" onClick={() => setIsMenuOpen(false)} highlight />
+        </nav>
+
+        {/* App Download */}
+        <div style={{ padding: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+          <p style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>Patient Mobile App</p>
+          <a
+            href="https://play.google.com/store/apps/details?id=gmcch.vast.token"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              width: '100%', padding: '0.85rem',
+              background: 'var(--primary)', color: 'white',
+              borderRadius: '10px', fontWeight: 800, fontSize: '0.875rem',
+              textDecoration: 'none'
+            }}
+          >
+            <Smartphone size={16} /> Download Now
+          </a>
+        </div>
+      </div>
+
+      <style>{`
+        .desktop-nav { display: none; }
+        .hamburger-btn { display: flex; }
+        @media (min-width: 768px) {
+          .desktop-nav { display: flex !important; }
+          .hamburger-btn { display: none !important; }
+        }
+      `}</style>
+    </>
   );
+};
+
+/* ── Sub-components ── */
+const NavLink = ({ to, href, label }) => {
+  const style = {
+    padding: '0.5rem 0.85rem',
+    borderRadius: '8px',
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    color: '#475569',
+    textDecoration: 'none',
+    transition: 'background 0.15s, color 0.15s',
+    display: 'inline-block'
+  };
+  if (to) return <Link to={to} style={style} onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#0f172a'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>{label}</Link>;
+  return <a href={href} style={style} onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#0f172a'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}>{label}</a>;
+};
+
+const DrawerLink = ({ to, href, label, onClick, highlight }) => {
+  const style = {
+    display: 'block', padding: '0.8rem 1.5rem',
+    fontSize: '0.9rem', fontWeight: highlight ? 700 : 600,
+    color: highlight ? 'var(--primary)' : '#334155',
+    textDecoration: 'none',
+    transition: 'background 0.15s',
+    cursor: 'pointer', background: 'none', border: 'none', width: '100%', textAlign: 'left'
+  };
+  if (to) return <Link to={to} style={style} onClick={onClick} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>{label}</Link>;
+  return <a href={href} style={style} onClick={onClick} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>{label}</a>;
 };
 
 export default Header;

@@ -43,11 +43,31 @@ Route::middleware('throttle:60,1')->group(function () {
             Route::get('/doctors', [\App\Http\Controllers\HospitalDashboardController::class, 'getDoctorStats']);
         });
 
+        // Hospital User Management Endpoints
+        Route::prefix('hospital/users')->group(function () {
+            Route::get('/', [\App\Http\Controllers\HospitalUserController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\HospitalUserController::class, 'store']);
+            Route::post('/bulk', [\App\Http\Controllers\HospitalUserController::class, 'bulkStore']);
+        });
+
+        // Hospital Doctor Management Endpoints
+        Route::prefix('hospital/doctors')->group(function () {
+            Route::post('/', [\App\Http\Controllers\HospitalDoctorController::class, 'store']);
+        });
+
         // Hospital Unit Management Endpoints
         Route::prefix('hospital/units')->group(function () {
             Route::post('/', [\App\Http\Controllers\HospitalUnitController::class, 'store']);
             Route::put('/{id}', [\App\Http\Controllers\HospitalUnitController::class, 'update']);
             Route::delete('/{id}', [\App\Http\Controllers\HospitalUnitController::class, 'destroy']);
+        });
+
+        // Hospital Booking Management Endpoints
+        Route::prefix('hospital/bookings')->group(function () {
+            Route::get('/', [\App\Http\Controllers\HospitalBookingController::class, 'index']);
+            Route::put('/{id}/status', [\App\Http\Controllers\HospitalBookingController::class, 'updateStatus']);
+            Route::get('/settings', [\App\Http\Controllers\HospitalBookingController::class, 'getSettings']);
+            Route::put('/auto-approve', [\App\Http\Controllers\HospitalBookingController::class, 'updateAutoApprove']);
         });
     });
 });

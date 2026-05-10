@@ -16,6 +16,11 @@ class Doctor extends Authenticatable
         'qualification',
         'username',
         'password',
+        'department',
+        'phone',
+        'gender',
+        'regno',
+        'photo',
     ];
 
     protected $hidden = [

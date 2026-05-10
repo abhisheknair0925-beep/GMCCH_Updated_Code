@@ -72,11 +72,12 @@ class HospitalDashboardController extends Controller
 
         foreach ($units as $unit) {
             $unitData[$unit->id] = [
-                'unit_id' => $unit->id,
-                'unit_name' => $unit->name,
+                'unit_id'     => $unit->id,
+                'unit_name'   => $unit->name,
+                'day'         => $unit->day,   // ← was missing; caused unit.day = undefined on frontend
                 'doctor_name' => $unit->doctor ? $unit->doctor->name : 'Unassigned',
-                'today' => ['chemo' => 0, 'normal' => 0, 'completed' => 0, 'pending' => 0],
-                'tomorrow' => ['chemo' => 0, 'normal' => 0],
+                'today'       => ['chemo' => 0, 'normal' => 0, 'completed' => 0, 'pending' => 0],
+                'tomorrow'    => ['chemo' => 0, 'normal' => 0],
             ];
         }
 

@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20 items-center">
           {/* Map Column */}
           <div className="reveal">
-            <div className="rounded-sm overflow-hidden shadow-2xl h-[350px] border-4 border-white/20">
+            <div className="rounded-sm overflow-hidden shadow-2xl h-[350px] border-4 border-white/20 mb-4">
               <iframe 
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3922.3789498263544!2d76.216667!3d10.516667!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7ee0f91882d25%3A0xc33e5c94294e1e0a!2sGovernment%20Medical%20College%20Thrissur!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin" 
                 width="100%" 
@@ -21,6 +21,14 @@ const Footer = () => {
                 title="Hospital Map"
               ></iframe>
             </div>
+            <a 
+              href="https://maps.app.goo.gl/pjxg31QMgRpSj66U9" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-white/60 hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider"
+            >
+              <MapPin size={14} /> View Precise Location on Google Maps
+            </a>
           </div>
 
           {/* Contact Column */}
@@ -54,7 +62,7 @@ const Footer = () => {
               <Link to="/privacy" className="text-xs text-white/60 hover:text-primary transition-colors underline underline-offset-4">Privacy Policy</Link>
               
               <div className="mt-8 flex gap-4">
-                <a href="#" className="w-10 h-10 flex items-center justify-center border border-white/20 hover:bg-primary hover:border-primary transition-all rounded-sm text-white">
+                <a href="https://www.facebook.com/mcchtsr/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center border border-white/20 hover:bg-primary hover:border-primary transition-all rounded-sm text-white">
                   <span className="font-black text-xs">FB</span>
                 </a>
                 <a href="#" className="w-10 h-10 flex items-center justify-center border border-white/20 hover:bg-primary hover:border-primary transition-all rounded-sm text-white">
@@ -68,7 +76,7 @@ const Footer = () => {
         <hr className="border-white/10 mb-8" />
         
         <div className="text-center text-white/40 text-sm">
-          <p className="mb-2">Copyright © 2021, MC Chest Hospital, Thrissur.</p>
+          <p className="mb-2">Copyright © 2021, Government Medical College Chest and Cancer Hospital, Thrissur.</p>
           <p className="m-0">Developed with ❤️ by the Electronics and Communication Department of Vidya Academy of Science & Technology, Thrissur.</p>
           <div className="mt-4 space-x-4">
             <a href="#" className="hover:text-primary underline">Privacy Policy</a>

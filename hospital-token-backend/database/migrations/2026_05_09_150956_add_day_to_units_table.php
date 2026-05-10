@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('units', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('doctor_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->string('time')->nullable(); // Representing tbl_unit_time
-            $table->timestamps();
+        Schema::table('units', function (Blueprint $table) {
+            $table->string('day')->nullable()->after('name'); // e.g., Monday, Tuesday, etc.
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('units');
+        Schema::table('units', function (Blueprint $table) {
+            $table->dropColumn('day');
+        });
     }
 };
