@@ -12,8 +12,7 @@ use Illuminate\Notifications\Notifiable;
 
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['crno', 'name', 'email', 'phone', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['crno', 'name', 'user_age', 'user_gender'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -26,14 +25,35 @@ class User extends Authenticatable
      */
     protected function casts(): array
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return [];
     }
 
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Format CRNO from format "number/year" to "YY0000X"
+     * Example: "1/2021" -> "2100001"
+     * Example: "35/2026" -> "2600035"
+     */
+    public static function formatCrno($crno)
+    {
+        $crno = trim($crno);
+        if (str_contains($crno, '/')) {
+            $parts = explode('/', $crno);
+            if (count($parts) === 2) {
+                $number = (int)$parts[0];
+                $year = trim($parts[1]);
+                
+                if (strlen($year) === 4) {
+                    $shortYear = substr($year, 2, 2);
+                    $paddedNumber = str_pad($number, 5, '0', STR_PAD_LEFT);
+                    return $shortYear . $paddedNumber;
+                }
+            }
+        }
+        return $crno;
     }
 }

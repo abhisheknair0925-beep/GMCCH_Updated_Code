@@ -11,12 +11,6 @@ use Illuminate\Support\Facades\DB;
 class HospitalUserController extends Controller
 {
     /**
-     * Maximum number of rows allowed in a single CSV import.
-     * Files exceeding this limit are rejected immediately before any processing.
-     */
-    private const MAX_ROWS = 500;
-
-    /**
      * Number of rows inserted per database batch.
      * Keeps memory usage low and avoids giant single queries.
      */
@@ -37,17 +31,19 @@ class HospitalUserController extends Controller
         $this->checkAccess($request);
 
         $crno = $request->query('crno');
-        if (!$crno) {
-            return response()->json(['success' => false, 'message' => 'CR Number is required'], 400);
+        
+        if ($crno) {
+            $formattedCrno = User::formatCrno($crno);
+            $user = User::where('crno', $formattedCrno)->first();
+            
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'User not found', 'data' => []], 404);
+            }
+            return response()->json(['success' => true, 'data' => [$user]]);
         }
 
-        $user = User::where('crno', $crno)->first();
-
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'User not found'], 404);
-        }
-
-        return response()->json(['success' => true, 'data' => $user]);
+        $users = User::orderBy('id', 'desc')->get();
+        return response()->json(['success' => true, 'data' => $users]);
     }
 
     /**
@@ -57,20 +53,22 @@ class HospitalUserController extends Controller
     {
         $this->checkAccess($request);
 
+        if ($request->has('crno')) {
+            $request->merge(['crno' => User::formatCrno($request->crno)]);
+        }
+
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'crno'     => 'required|string|unique:users,crno',
-            'phone'    => 'nullable|string|max:20',
-            'email'    => 'nullable|email|unique:users,email',
-            'password' => 'nullable|string|min:6',
+            'name'        => 'required|string|max:255',
+            'crno'        => 'required|string|unique:users,crno',
+            'user_age'    => 'nullable|integer|min:0|max:150',
+            'user_gender' => 'nullable|string|max:20',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'crno'     => $request->crno,
-            'phone'    => $request->phone,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password ?? 'password123'),
+            'name'        => $request->name,
+            'crno'        => $request->crno,
+            'user_age'    => $request->user_age,
+            'user_gender' => $request->user_gender,
         ]);
 
         return response()->json([
@@ -126,19 +124,10 @@ class HospitalUserController extends Controller
             ], 422);
         }
 
-        // ── Step 2: Count rows and enforce MAX_ROWS limit ────────────────────
-        // We count first so we never load a huge file into memory.
+        // ── Step 2: Count rows ───────────────────────────────────────────────
         $rowCount = 0;
         while (fgetcsv($handle) !== false) {
             $rowCount++;
-            if ($rowCount > self::MAX_ROWS) {
-                fclose($handle);
-                return response()->json([
-                    'success' => false,
-                    'message' => "Import rejected: the file contains more than " . self::MAX_ROWS . " data rows. "
-                               . "Please split the file into smaller batches (max " . self::MAX_ROWS . " rows each)."
-                ], 422);
-            }
         }
 
         if ($rowCount === 0) {
@@ -179,6 +168,8 @@ class HospitalUserController extends Controller
                 $data = array_combine($header, $row);
                 $name = trim($data['name'] ?? '');
                 $crno = trim($data['crno'] ?? '');
+                
+                $crno = User::formatCrno($crno);
 
                 // Basic per-row validation
                 if (empty($name) || empty($crno)) {
@@ -197,13 +188,12 @@ class HospitalUserController extends Controller
                 $existingCrnos[$crno] = true;
 
                 $batch[] = [
-                    'name'       => $name,
-                    'crno'       => $crno,
-                    'phone'      => trim($data['phone'] ?? '') ?: null,
-                    'email'      => trim($data['email'] ?? '') ?: null,
-                    'password'   => Hash::make('password123'),
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'name'        => $name,
+                    'crno'        => $crno,
+                    'user_age'    => isset($data['user_age']) && is_numeric($data['user_age']) ? (int)$data['user_age'] : null,
+                    'user_gender' => trim($data['user_gender'] ?? '') ?: null,
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
                 ];
 
                 // Flush batch when CHUNK_SIZE is reached

@@ -16,7 +16,8 @@ class AuthController extends Controller
      */
     public function userLogin(UserLoginRequest $request)
     {
-        $user = User::where('crno', $request->crno)->first();
+        $crno = User::formatCrno($request->crno);
+        $user = User::where('crno', $crno)->first();
 
         if (!$user) {
             return response()->json([

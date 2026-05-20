@@ -1,4 +1,3 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -18,14 +17,6 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(initializationSettings);
-
-    // 3. Request Permissions (FCM)
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
   }
 
   static Future<void> showInstantNotification(String title, String body) async {
@@ -57,9 +48,5 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
-  }
-
-  static Future<String?> getFCMToken() async {
-    return await FirebaseMessaging.instance.getToken();
   }
 }

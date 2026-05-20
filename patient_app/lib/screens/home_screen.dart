@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 import '../services/api_service.dart';
@@ -15,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+  bool _isBackPressed = false;
   late Future<List<UnitModel>> _unitsFuture;
 
   @override
@@ -23,84 +28,220 @@ class _HomeScreenState extends State<HomeScreen> {
     _unitsFuture = ApiService.getUnits();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Select Department'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFFFF0088),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => Navigator.pop(context),
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          // Greeting Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFF0088),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hello, ${widget.user.name}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Choose a department to book your token',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
-          const SizedBox(height: 10),
-
-          // Units List
-          Expanded(
-            child: FutureBuilder<List<UnitModel>>(
-              future: _unitsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFFFF0088)));
-                } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildErrorState();
-                }
-
-                final units = snapshot.data!;
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(15),
-                  itemCount: units.length,
-                  itemBuilder: (context, index) {
-                    return _buildUnitCard(context, units[index]);
-                  },
-                );
+  void _showPrivacyDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Terms & Conditions'),
+          content: const Text(
+              "End User License Agreement\nBy using this app, you agree to abide by the terms."),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK', style: TextStyle(color: Color(0xFFFF0088))),
+              onPressed: () {
+                Navigator.of(context).pop();
               },
             ),
-          ),
-        ],
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('About'),
+          content: const Text(
+              "MCCH Token App\nVersion 1.0\nDesigned for smooth hospital token booking."),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK', style: TextStyle(color: Color(0xFFFF0088))),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_isBackPressed) {
+      if (Platform.isAndroid) {
+        SystemNavigator.pop();
+      } else {
+        exit(0);
+      }
+      return true;
+    }
+
+    _isBackPressed = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please press back again to exit.'),
+        duration: Duration(seconds: 2),
       ),
     );
+
+    Timer(const Duration(seconds: 2), () {
+      _isBackPressed = false;
+    });
+
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _onWillPop();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: Text(_currentIndex == 0 ? 'Select Department' : 'My Bookings'),
+          centerTitle: true,
+          backgroundColor: const Color(0xFFFF0088),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          actions: [
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'about') {
+                  _showAboutDialog();
+                } else if (value == 'terms') {
+                  _showPrivacyDialog();
+                } else if (value == 'logout') {
+                  Navigator.pop(context);
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  const PopupMenuItem(
+                    value: 'about',
+                    child: Text('About'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'terms',
+                    child: Text('Terms & Conditions'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: Text('Logout'),
+                  ),
+                ];
+              },
+            ),
+          ],
+        ),
+        body: _currentIndex == 0 ? _buildHomeBody() : _buildBookingsBody(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onItemTapped,
+          selectedItemColor: const Color(0xFFFF0088),
+          unselectedItemColor: Colors.grey,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications),
+              label: 'Bookings',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- HOME TAB ---
+  Widget _buildHomeBody() {
+    return Column(
+      children: [
+        // Greeting Header
+        Container(
+          padding: const EdgeInsets.all(20),
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: Color(0xFFFF0088),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hello, ${widget.user.name}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Choose a department to book your token',
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Units List
+        Expanded(
+          child: FutureBuilder<List<UnitModel>>(
+            future: _unitsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFFFF0088)));
+              } else if (snapshot.hasError ||
+                  !snapshot.hasData ||
+                  snapshot.data!.isEmpty) {
+                return _buildErrorState();
+              }
+
+              final units = snapshot.data!;
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(15),
+                itemCount: units.length,
+                itemBuilder: (context, index) {
+                  return _buildUnitCard(context, units[index]);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- BOOKINGS TAB ---
+  Widget _buildBookingsBody() {
+    // Just nest the MyBookingsScreen (which is normally a Scaffold) inside this tab.
+    // Wait, MyBookingsScreen is a full Scaffold with an AppBar.
+    // It's better to render its body directly or let it be a separate screen, but for a BottomNav it's usually embedded.
+    // Let's embed it. We can just render MyBookingsScreen and remove its app bar locally if needed, but it's simpler to just return the screen.
+    return MyBookingsScreen(user: widget.user, hideAppBar: true);
   }
 
   Widget _buildUnitCard(BuildContext context, UnitModel unit) {
@@ -113,10 +254,11 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF0088).withOpacity(0.1),
+            color: const Color(0xFFFF0088).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.medical_services, color: Color(0xFFFF0088), size: 30),
+          child: const Icon(Icons.medical_services,
+              color: Color(0xFFFF0088), size: 30),
         ),
         title: Text(
           unit.name,
@@ -143,7 +285,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        trailing:
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: () {
           Navigator.push(
             context,
@@ -166,7 +309,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
           const SizedBox(height: 10),
-          const Text('Could not load departments', style: TextStyle(color: Colors.grey)),
+          const Text('Could not load departments',
+              style: TextStyle(color: Colors.grey)),
           TextButton(
             onPressed: () {
               setState(() {

@@ -1,31 +1,79 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 
 class ApiService {
-  // Configurable Base URL
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // Configurable Base URL (10.0.2.2 is the host localhost for Android Emulator)
+  static const String baseUrl = 'http://10.0.2.2:8001/api';
+  
+  // Store token in memory for session
+  static String? _token;
+
+  static Map<String, String> _getHeaders() {
+    final headers = {'Content-Type': 'application/json'};
+    if (_token != null) {
+      headers['Authorization'] = 'Bearer $_token';
+    }
+    return headers;
+  }
 
   static Future<Map<String, dynamic>> login(String crno) async {
     try {
+      debugPrint('Attempting login to: $baseUrl/user/login with CRNO: $crno');
       final response = await http.post(
         Uri.parse('$baseUrl/user/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'crno': crno}),
       );
 
+      debugPrint('Login Response Status: ${response.statusCode}');
+      debugPrint('Login Response Body: ${response.body}');
+
       final data = json.decode(response.body);
 
-      if (data['status'] == true) {
+      if (data['success'] == true) {
+        _token = data['data']['token'];
         return {
           'status': true,
-          'user': UserModel.fromJson(data['user']),
+          'user': UserModel.fromJson(data['data']['user']),
         };
       } else {
         return {
           'status': false,
           'message': data['message'] ?? 'Invalid CR Number',
+        };
+      }
+    } catch (e) {
+      debugPrint('Login Error: $e');
+      return {
+        'status': false,
+        'message': 'Network Error: Check your internet connection',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> doctorLogin(String username, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/doctor/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'username': username, 'password': password}),
+      );
+
+      final data = json.decode(response.body);
+
+      if (data['success'] == true) {
+        _token = data['data']['token'];
+        return {
+          'status': true,
+          'doctor': data['data']['doctor'], // Can create DoctorModel if needed
+        };
+      } else {
+        return {
+          'status': false,
+          'message': data['message'] ?? 'Invalid Credentials',
         };
       }
     } catch (e) {
@@ -40,12 +88,15 @@ class ApiService {
     try {
       final response = await http.get(Uri.parse('$baseUrl/units'));
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => UnitModel.fromJson(item)).toList();
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data['success'] == true) {
+           final List<dynamic> list = data['data'];
+           return list.map((item) => UnitModel.fromJson(item)).toList();
+        }
       }
       return [];
     } catch (e) {
-      print('Units Fetch Error: $e');
+      debugPrint('Units Fetch Error: $e');
       return [];
     }
   }
@@ -54,17 +105,18 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/booking/create'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode({
           'user_id': userId,
           'unit_id': unitId,
+          'type': 'normal', // Default or need to pass
         }),
       );
 
       return json.decode(response.body);
     } catch (e) {
       return {
-        'status': false,
+        'success': false,
         'message': 'Booking failed: Network Error',
       };
     }
@@ -72,9 +124,13 @@ class ApiService {
 
   static Future<List<dynamic>> getUserBookings(int userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/booking/user/$userId'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/booking/my-bookings'),
+        headers: _getHeaders(),
+      );
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+        if (data['success'] == true) return data['data'];
       }
       return [];
     } catch (e) {
@@ -86,7 +142,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/booking/cancel'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _getHeaders(),
         body: json.encode({
           'booking_id': bookingId,
         }),
@@ -95,9 +151,47 @@ class ApiService {
       return json.decode(response.body);
     } catch (e) {
       return {
-        'status': false,
+        'success': false,
         'message': 'Cancellation failed: Network Error',
       };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getDoctorQueue(int unitId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/doctor/queue/$unitId'),
+        headers: _getHeaders(),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> callNextToken(int unitId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/doctor/call-next'),
+        headers: _getHeaders(),
+        body: json.encode({'unit_id': unitId}),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> markTokenCompleted(int unitId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/doctor/complete'),
+        headers: _getHeaders(),
+        body: json.encode({'unit_id': unitId}),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
     }
   }
 }

@@ -4,8 +4,9 @@ import '../services/api_service.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   final UserModel user;
+  final bool hideAppBar;
 
-  const MyBookingsScreen({super.key, required this.user});
+  const MyBookingsScreen({super.key, required this.user, this.hideAppBar = false});
 
   @override
   State<MyBookingsScreen> createState() => _MyBookingsScreenState();
@@ -61,6 +62,35 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget bodyContent = FutureBuilder<List<dynamic>>(
+      future: _bookingsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFFF0088)));
+        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        final bookings = snapshot.data!;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(15),
+          itemCount: bookings.length,
+          itemBuilder: (context, index) {
+            final booking = bookings[index];
+            return _buildBookingCard(booking);
+          },
+        );
+      },
+    );
+
+    if (widget.hideAppBar) {
+      return Container(
+        color: Colors.grey[100],
+        child: bodyContent,
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -68,27 +98,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         backgroundColor: const Color(0xFFFF0088),
         foregroundColor: Colors.white,
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _bookingsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFFFF0088)));
-          } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          final bookings = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(15),
-            itemCount: bookings.length,
-            itemBuilder: (context, index) {
-              final booking = bookings[index];
-              return _buildBookingCard(booking);
-            },
-          );
-        },
-      ),
+      body: bodyContent,
     );
   }
 
@@ -105,7 +115,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
             ),
             child: Row(
@@ -136,7 +146,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     const Text('TOKEN NO', style: TextStyle(color: Colors.grey, fontSize: 12)),
                     Text(
                       '${booking['token_number']}',
-                      style: const TextStyle(fontSize: 45, fontWeight: FontWeight.black, color: Color(0xFFFF0088)),
+                      style: const TextStyle(fontSize: 45, fontWeight: FontWeight.w900, color: Color(0xFFFF0088)),
                     ),
                   ],
                 ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 import '../services/api_service.dart';
-import '../services/notification_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final UserModel user;
@@ -67,9 +66,9 @@ class _BookingScreenState extends State<BookingScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF0088).withOpacity(0.05),
+              color: const Color(0xFFFF0088).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFF0088).withOpacity(0.2)),
+              border: Border.all(color: const Color(0xFFFF0088).withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
@@ -119,43 +118,44 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Widget _buildSuccessUI() {
     final data = _bookingResult!['data'];
-    return Center(
+    return Padding(
       padding: const EdgeInsets.all(30.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.check_circle, color: Colors.green, size: 100),
-          const SizedBox(height: 20),
-          const Text(
-            'Booking Successful!',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 40),
-          Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 5,
-                  blurRadius: 15,
-                )
-              ],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 100),
+            const SizedBox(height: 20),
+            const Text(
+              'Booking Successful!',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            child: Column(
-              children: [
-                const Text('YOUR TOKEN NUMBER', style: TextStyle(color: Colors.grey, letterSpacing: 2)),
-                const SizedBox(height: 10),
-                Text(
-                  '${data['token_number']}',
-                  style: const TextStyle(
-                    fontSize: 80,
-                    fontWeight: FontWeight.black,
-                    color: Color(0xFFFF0088),
+            const SizedBox(height: 40),
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withValues(alpha: 0.2),
+                    spreadRadius: 5,
+                    blurRadius: 15,
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Text('YOUR TOKEN NUMBER', style: TextStyle(color: Colors.grey, letterSpacing: 2)),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${data['token_number']}',
+                    style: const TextStyle(
+                      fontSize: 80,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFFF0088),
+                    ),
                   ),
-                ),
                 const Divider(height: 40),
                 const Text('REPORTING TIME', style: TextStyle(color: Colors.grey, letterSpacing: 2)),
                 const SizedBox(height: 10),
@@ -173,6 +173,7 @@ class _BookingScreenState extends State<BookingScreen> {
           )
         ],
       ),
+     ),
     );
   }
 
