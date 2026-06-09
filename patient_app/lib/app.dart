@@ -12,7 +12,7 @@ class PosApp extends ConsumerWidget {
     return ScreenUtilInit(
       designSize: const Size(1280, 800), // Standard POS Tablet size
       minTextAdapt: true,
-      builder: (_, __) => MaterialApp(
+      builder: (context, child) => MaterialApp(
         title: 'GMCCH Patient Portal',
         theme: AppTheme.light,
         home: const SplashScreen(),

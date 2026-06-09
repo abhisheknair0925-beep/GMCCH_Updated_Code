@@ -14,6 +14,10 @@ class ApiService {
   // Store token in memory for session
   static String? _token;
 
+  static void logout() {
+    _token = null;
+  }
+
   static Map<String, String> _getHeaders() {
     final headers = {'Content-Type': 'application/json'};
     if (_token != null) {

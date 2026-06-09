@@ -7,6 +7,7 @@ import '../models/unit_model.dart';
 import '../services/api_service.dart';
 import 'department_doctors_screen.dart';
 import 'my_bookings_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel user;
@@ -125,7 +126,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 } else if (value == 'terms') {
                   _showPrivacyDialog();
                 } else if (value == 'logout') {
-                  Navigator.pop(context);
+                  ApiService.logout();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    (route) => false,
+                  );
                 }
               },
               itemBuilder: (BuildContext context) {

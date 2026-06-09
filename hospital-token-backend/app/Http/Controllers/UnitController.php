@@ -12,7 +12,7 @@ class UnitController extends Controller
         // Cache units for 24 hours (86400 seconds) since hospital units rarely change.
         // This significantly boosts performance and reduces DB load.
         $units = Cache::remember('hospital_units', 86400, function () {
-            return Unit::with('doctor')->get();
+            return Unit::with('doctor')->get()->toArray();
         });
 
         return response()->json([

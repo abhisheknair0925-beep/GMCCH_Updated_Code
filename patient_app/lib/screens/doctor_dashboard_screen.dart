@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'doctor_queue_screen.dart';
+import 'login_screen.dart';
+import '../services/api_service.dart';
 
 class DoctorDashboardScreen extends StatelessWidget {
   final Map<String, dynamic> doctor;
@@ -21,7 +23,14 @@ class DoctorDashboardScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              ApiService.logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
+            },
           )
         ],
       ),

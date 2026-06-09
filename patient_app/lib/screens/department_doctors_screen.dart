@@ -72,6 +72,7 @@ class DepartmentDoctorsScreen extends StatelessWidget {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('MINI'),
+        centerTitle: true,
         backgroundColor: const Color(0xFFFF0088),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -93,11 +94,13 @@ class DepartmentDoctorsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               color: Colors.white,
               child: Text(
-                departmentName,
+                departmentName.endsWith('Department') 
+                    ? departmentName.replaceAll(' Department', '\nDepartment') 
+                    : '$departmentName\nDepartment',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                   color: Colors.black87,
                   height: 1.3,
                 ),
@@ -121,18 +124,12 @@ class DepartmentDoctorsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // OP Day Banner
+        // OP Day Banner (Full Width, Solid Color)
         Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 16),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFFF0088), Color(0xFFFF3399)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
+          color: const Color(0xFFFF0088),
           child: Text(
             'OP.   $days',
             style: const TextStyle(
@@ -182,8 +179,21 @@ class DepartmentDoctorsScreen extends StatelessWidget {
           ),
         ),
 
-        // Doctor Cards
-        ...doctors.map((doctor) => _buildDoctorCard(context, doctor)),
+        // Grouped Doctor Container (Full Width, No Card Margins)
+        Container(
+          color: Colors.white,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              for (int i = 0; i < doctors.length; i++) ...[
+                _buildDoctorCard(context, doctors[i]),
+                if (i < doctors.length - 1)
+                  const Divider(height: 1, indent: 20, endIndent: 20, color: Color(0xFFEEEEEE)),
+              ]
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -212,7 +222,7 @@ class DepartmentDoctorsScreen extends StatelessWidget {
               ...doctors.map((doctor) {
                 final units = doctor['units'] as List<UnitModel>;
                 return ListTile(
-                  leading: _buildDoctorAvatar(doctor, radius: 22),
+                  leading: _buildDoctorAvatar(doctor, width: 44, height: 50),
                   title: Text(
                     doctor['name'],
                     style: const TextStyle(fontWeight: FontWeight.w600),
@@ -248,13 +258,13 @@ class DepartmentDoctorsScreen extends StatelessWidget {
 
   Widget _buildDoctorCard(BuildContext context, Map<String, dynamic> doctor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Doctor Photo
-          _buildDoctorAvatar(doctor, radius: 36),
-          const SizedBox(width: 16),
+          // Doctor Photo (Square/Rectangular)
+          _buildDoctorAvatar(doctor, width: 80, height: 90),
+          const SizedBox(width: 20),
 
           // Doctor Info
           Expanded(
@@ -264,7 +274,7 @@ class DepartmentDoctorsScreen extends StatelessWidget {
                 Text(
                   doctor['name'] ?? '',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
@@ -272,11 +282,11 @@ class DepartmentDoctorsScreen extends StatelessWidget {
                 if (doctor['qualification'] != null &&
                     doctor['qualification'].toString().isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       doctor['qualification'],
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: Colors.grey[600],
                         height: 1.3,
                       ),
@@ -290,20 +300,28 @@ class DepartmentDoctorsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDoctorAvatar(Map<String, dynamic> doctor, {double radius = 36}) {
+  Widget _buildDoctorAvatar(Map<String, dynamic> doctor, {double width = 80, double height = 90}) {
     final photoUrl = ApiService.getDoctorPhotoUrl(doctor['photo']);
 
     if (photoUrl != null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Colors.grey[200],
-        backgroundImage: NetworkImage(photoUrl),
-        onBackgroundImageError: (_, __) {},
-        child: null,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          width: width,
+          height: height,
+          color: Colors.grey[200],
+          child: Image.network(
+            photoUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _buildPlaceholderAvatar(doctor, width, height),
+          ),
+        ),
       );
     }
+    return _buildPlaceholderAvatar(doctor, width, height);
+  }
 
-    // Fallback: Initials avatar
+  Widget _buildPlaceholderAvatar(Map<String, dynamic> doctor, double width, double height) {
     final name = (doctor['name'] as String?) ?? '';
     final initials = name
         .split(' ')
@@ -312,15 +330,20 @@ class DepartmentDoctorsScreen extends StatelessWidget {
         .map((w) => w[0].toUpperCase())
         .join();
 
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: const Color(0xFFFF0088).withValues(alpha: 0.15),
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: const Color(0xFFFF0088),
-          fontWeight: FontWeight.bold,
-          fontSize: radius * 0.5,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        width: width,
+        height: height,
+        color: const Color(0xFFFF0088).withValues(alpha: 0.15),
+        alignment: Alignment.center,
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: const Color(0xFFFF0088),
+            fontWeight: FontWeight.bold,
+            fontSize: width * 0.35,
+          ),
         ),
       ),
     );
