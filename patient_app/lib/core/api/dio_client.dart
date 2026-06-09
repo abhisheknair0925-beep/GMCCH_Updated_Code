@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -5,7 +7,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 final dioProvider = Provider((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://10.0.2.2:8001/api', // Updated to match user's port
+      baseUrl: (!kIsWeb && Platform.isAndroid)
+          ? 'http://10.0.2.2:8001/api'
+          : 'http://localhost:8001/api', // Dynamic URL for macOS/Android
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       headers: {'Accept': 'application/json'},

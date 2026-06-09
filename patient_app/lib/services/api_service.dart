@@ -1,12 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 
 class ApiService {
-  // Configurable Base URL (10.0.2.2 is the host localhost for Android Emulator)
-  static const String baseUrl = 'http://10.0.2.2:8001/api';
+  // Configurable Base URL (10.0.2.2 is the host localhost for Android Emulator, localhost for macOS/iOS/web)
+  static final String baseUrl = (!kIsWeb && Platform.isAndroid)
+      ? 'http://10.0.2.2:8001/api'
+      : 'http://localhost:8001/api';
   
   // Store token in memory for session
   static String? _token;
