@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 import '../services/api_service.dart';
-import 'booking_screen.dart';
+import 'department_doctors_screen.dart';
 import 'my_bookings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -221,11 +221,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
               final units = snapshot.data!;
 
+              // Group units by department
+              final Map<String, List<UnitModel>> departments = {};
+              for (final unit in units) {
+                final dept = unit.doctorDepartment ?? unit.name;
+                departments.putIfAbsent(dept, () => []);
+                departments[dept]!.add(unit);
+              }
+
+              final deptEntries = departments.entries.toList();
+
               return ListView.builder(
                 padding: const EdgeInsets.all(15),
-                itemCount: units.length,
+                itemCount: deptEntries.length,
                 itemBuilder: (context, index) {
-                  return _buildUnitCard(context, units[index]);
+                  final entry = deptEntries[index];
+                  return _buildDepartmentCard(context, entry.key, entry.value);
                 },
               );
             },
@@ -237,14 +248,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- BOOKINGS TAB ---
   Widget _buildBookingsBody() {
-    // Just nest the MyBookingsScreen (which is normally a Scaffold) inside this tab.
-    // Wait, MyBookingsScreen is a full Scaffold with an AppBar.
-    // It's better to render its body directly or let it be a separate screen, but for a BottomNav it's usually embedded.
-    // Let's embed it. We can just render MyBookingsScreen and remove its app bar locally if needed, but it's simpler to just return the screen.
     return MyBookingsScreen(user: widget.user, hideAppBar: true);
   }
 
-  Widget _buildUnitCard(BuildContext context, UnitModel unit) {
+  Widget _buildDepartmentCard(BuildContext context, String departmentName, List<UnitModel> units) {
+    // Count unique doctors in this department
+    final uniqueDoctors = <int>{};
+    for (final unit in units) {
+      if (unit.doctorId != null) uniqueDoctors.add(unit.doctorId!);
+    }
+    final doctorCount = uniqueDoctors.isEmpty ? units.length : uniqueDoctors.length;
+
+    // Collect unique OP days
+    final opDays = <String>{};
+    for (final unit in units) {
+      if (unit.day != null && unit.day!.isNotEmpty) opDays.add(unit.day!);
+    }
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 15),
@@ -261,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Color(0xFFFF0088), size: 30),
         ),
         title: Text(
-          unit.name,
+          departmentName,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         subtitle: Column(
@@ -272,17 +292,28 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Icon(Icons.person, size: 14, color: Colors.grey),
                 const SizedBox(width: 5),
-                Text(unit.doctorName, style: const TextStyle(color: Colors.grey)),
+                Text(
+                  '$doctorCount Doctor${doctorCount != 1 ? 's' : ''}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ],
             ),
-            const SizedBox(height: 3),
-            Row(
-              children: [
-                const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                const SizedBox(width: 5),
-                Text(unit.time, style: const TextStyle(color: Colors.grey)),
-              ],
-            ),
+            if (opDays.isNotEmpty) ...[
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      opDays.join(', '),
+                      style: const TextStyle(color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
         trailing:
@@ -291,9 +322,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => BookingScreen(
+              builder: (context) => DepartmentDoctorsScreen(
+                departmentName: departmentName,
+                departmentUnits: units,
                 user: widget.user,
-                unit: unit,
               ),
             ),
           );

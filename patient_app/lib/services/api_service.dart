@@ -22,6 +22,13 @@ class ApiService {
     return headers;
   }
 
+  /// Constructs the full URL for a doctor's photo stored in backend storage.
+  static String? getDoctorPhotoUrl(String? photoPath) {
+    if (photoPath == null || photoPath.isEmpty) return null;
+    final storageBaseUrl = baseUrl.replaceAll('/api', '');
+    return '$storageBaseUrl/storage/$photoPath';
+  }
+
   static Future<Map<String, dynamic>> login(String crno) async {
     try {
       debugPrint('Attempting login to: $baseUrl/user/login with CRNO: $crno');
