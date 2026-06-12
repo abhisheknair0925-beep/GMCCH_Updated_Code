@@ -6,6 +6,17 @@ A comprehensive hospital token booking system consisting of a web-based admin pa
 
 This system allows patients to book tokens for doctor consultations through a mobile app, while doctors can view their appointment schedules. Hospital administrators can manage doctors, units, users, and bookings through a web interface.
 
+## Workspace Folder Mapping
+
+In this repository, the actual folder names are:
+
+- `hospital-token-backend/`: PHP-based admin panel and API backend for the hospital token system.
+- `hospital-token-frontend/`: Web frontend project.
+- `patient_app/`: Android mobile application for patients and doctors.
+- `sample_patients_import.csv`: Example CSV file for bulk user import.
+
+The README refers to `project-web/` for the backend and `Token_App/` for the Android app; in this workspace those correspond to `hospital-token-backend/` and `patient_app/` respectively.
+
 ## Components
 
 ### 1. Web Admin Panel (project-web/)

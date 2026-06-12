@@ -120,9 +120,18 @@ const UserTab = () => {
 
                     <div style={s.card}>
                         <SectionTitle icon={<Upload size={17} />} text="Bulk CSV Import" />
-                        <p style={s.desc}>
-                            Upload a CSV file with columns: <code>name</code>, <code>crno</code>, <code>user_age</code>, <code>user_gender</code>.
-                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <p style={s.desc}>
+                                Upload a CSV file with columns: <code>name</code>, <code>crno</code>, <code>user_age</code>, <code>user_gender</code>.
+                            </p>
+                            <a
+                                href="/sample_patients_import.csv"
+                                download
+                                style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: 700, textDecoration: 'none' }}
+                            >
+                                Download sample CSV
+                            </a>
+                        </div>
 
                         {bulkResult?.type === 'success' && bulkResult.data.errors?.length > 0 && (
                             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.82rem', color: '#92400e' }}>

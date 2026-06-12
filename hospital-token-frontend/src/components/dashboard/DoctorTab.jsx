@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import api from '../../lib/axios';
 import { useToast } from '../Toast';
 import { LoadingButton } from '../Spinner';
-import { UserPlus, Camera, X, CheckCircle, User, Phone, Building2, CreditCard, Lock, Stethoscope } from 'lucide-react';
+import { UserPlus, Camera, X, CheckCircle, User, Mail, Phone, Building2, CreditCard, Lock, Stethoscope } from 'lucide-react';
 
 const EMPTY_DOCTOR = {
     name: '', qualification: '', unit_id: '', department: '',
-    phone: '', gender: 'male', regno: '', password: '', photo: null
+    phone: '', email: '', gender: 'male', regno: '', password: '', photo: null
 };
 
 // ── Confirmation Modal ─────────────────────────────────────────────────────
@@ -17,13 +17,13 @@ const ConfirmModal = ({ form, unitLabel, preview, onConfirm, onBack, loading }) 
         { icon: <Building2 size={15} />,   label: 'Department',      value: form.department },
         { icon: <Building2 size={15} />,   label: 'Assigned Unit',   value: unitLabel },
         { icon: <Phone size={15} />,       label: 'Phone',           value: form.phone },
+        { icon: <Mail size={15} />,        label: 'Email',           value: form.email },
         { icon: <User size={15} />,        label: 'Gender',          value: form.gender.charAt(0).toUpperCase() + form.gender.slice(1) },
         { icon: <CreditCard size={15} />,  label: 'Registration No', value: form.regno },
         { icon: <Lock size={15} />,        label: 'Password',        value: '••••••••' },
     ];
 
     return (
-        /* Backdrop */
         <div style={{
             position: 'fixed', inset: 0,
             background: 'rgba(15,23,42,0.55)',
@@ -225,6 +225,7 @@ const DoctorTab = ({ units, onDoctorAdded }) => {
                             {/* Column 2 */}
                             <div>
                                 <Field label="Registration No (Regno) *" value={form.regno} onChange={v => set('regno', v)} required placeholder="MCI Reg number" />
+                                <Field label="Email" value={form.email} onChange={v => set('email', v)} type="email" placeholder="doctor@example.com" />
                                 <div style={{ marginBottom: '0.85rem' }}>
                                     <label style={s.label}>Gender *</label>
                                     <select style={s.input} value={form.gender} onChange={e => set('gender', e.target.value)}>
