@@ -12,7 +12,8 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<HospitalLogin />} />
+          <Route path="/Adminlogin" element={<HospitalLogin />} />
+          <Route path="/adminlogin" element={<HospitalLogin />} />
 
           {/* Protected Hospital Admin Routes */}
           <Route

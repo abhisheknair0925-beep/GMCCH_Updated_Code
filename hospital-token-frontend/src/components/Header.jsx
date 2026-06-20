@@ -40,23 +40,6 @@ const Header = () => {
               <NavLink to="/" label="Home" />
               <NavLink href="#about" label="About" />
               <NavLink href="#contact" label="Contact" />
-              <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 0.5rem' }} />
-              <Link to="/login" style={{
-                display: 'inline-flex', alignItems: 'center',
-                padding: '0.5rem 1.25rem',
-                borderRadius: '8px',
-                background: 'var(--primary)',
-                color: 'white',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-                transition: 'opacity 0.2s'
-              }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-              >
-                Admin Portal
-              </Link>
             </div>
 
             {/* Hamburger */}
@@ -136,8 +119,6 @@ const Header = () => {
           <DrawerLink to="/" label="Home" onClick={() => setIsMenuOpen(false)} />
           <DrawerLink href="#about" label="About Us" onClick={() => setIsMenuOpen(false)} />
           <DrawerLink href="#contact" label="Contact Us" onClick={() => setIsMenuOpen(false)} />
-          <div style={{ margin: '0.5rem 1.5rem', height: '1px', background: '#f1f5f9' }} />
-          <DrawerLink to="/login" label="Admin Login" onClick={() => setIsMenuOpen(false)} highlight />
         </nav>
 
         {/* App Download */}

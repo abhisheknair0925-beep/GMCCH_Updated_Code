@@ -81,7 +81,7 @@ const HospitalDashboard = () => {
         dashboardCache.invalidateAll();
         localStorage.removeItem('token');
         localStorage.removeItem('hospital');
-        navigate('/login');
+        navigate('/Adminlogin');
     };
 
     const handleManualRefresh = () => {

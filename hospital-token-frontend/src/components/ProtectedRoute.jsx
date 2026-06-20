@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!token || !hospital) {
     // Redirect to login, saving the current path so we can return after auth
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/Adminlogin" state={{ from: location }} replace />;
   }
 
   return children;

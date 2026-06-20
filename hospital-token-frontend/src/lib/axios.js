@@ -35,8 +35,8 @@ api.interceptors.response.use(
             localStorage.removeItem('hospital');
 
             // Only redirect if not already on the login page
-            if (!window.location.pathname.includes('/login')) {
-                window.location.href = '/login';
+            if (!window.location.pathname.toLowerCase().includes('/adminlogin')) {
+                window.location.href = '/Adminlogin';
             }
         }
         return Promise.reject(error);
