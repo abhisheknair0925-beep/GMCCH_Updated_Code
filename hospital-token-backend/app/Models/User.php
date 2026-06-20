@@ -17,7 +17,13 @@ class User extends Authenticatable
         'name',
         'user_age',
         'user_gender',
+        'password',
     ];
+
+    protected $hidden = [
+        'password',
+    ];
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -28,7 +34,9 @@ class User extends Authenticatable
      */
     protected function casts(): array
     {
-        return [];
+        return [
+            'password' => 'hashed',
+        ];
     }
 
     public function bookings()

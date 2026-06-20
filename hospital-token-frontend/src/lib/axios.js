@@ -9,11 +9,11 @@ const api = axios.create({
 });
 
 // ── Request Interceptor ──────────────────────────────────────────────────────
-// Automatically attaches the auth token to every request from localStorage.
+// Automatically attaches the auth token to every request from sessionStorage.
 // This ensures protected API calls work correctly even after a page refresh.
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -31,8 +31,8 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Clear stale auth data
-            localStorage.removeItem('token');
-            localStorage.removeItem('hospital');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('hospital');
 
             // Only redirect if not already on the login page
             if (!window.location.pathname.toLowerCase().includes('/adminlogin')) {

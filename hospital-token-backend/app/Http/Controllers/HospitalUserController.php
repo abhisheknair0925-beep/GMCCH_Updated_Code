@@ -62,13 +62,17 @@ class HospitalUserController extends Controller
             'crno'        => 'required|string|unique:users,crno',
             'user_age'    => 'nullable|integer|min:0|max:150',
             'user_gender' => 'nullable|string|max:20',
+            'password'    => 'nullable|string|min:6',
         ]);
+
+        $password = $request->password ? Hash::make($request->password) : Hash::make($request->crno);
 
         $user = User::create([
             'name'        => $request->name,
             'crno'        => $request->crno,
             'user_age'    => $request->user_age,
             'user_gender' => $request->user_gender,
+            'password'    => $password,
         ]);
 
         return response()->json([
@@ -192,6 +196,7 @@ class HospitalUserController extends Controller
                     'crno'        => $crno,
                     'user_age'    => isset($data['user_age']) && is_numeric($data['user_age']) ? (int)$data['user_age'] : null,
                     'user_gender' => trim($data['user_gender'] ?? '') ?: null,
+                    'password'    => Hash::make($crno),
                     'created_at'  => $now,
                     'updated_at'  => $now,
                 ];
@@ -214,9 +219,13 @@ class HospitalUserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             fclose($handle);
+            \Log::error($e);
+            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
+                ? 'An unexpected database error occurred.'
+                : $e->getMessage();
             return response()->json([
                 'success' => false,
-                'message' => 'Bulk import failed: ' . $e->getMessage()
+                'message' => 'Bulk import failed: ' . $message
             ], 500);
         }
 

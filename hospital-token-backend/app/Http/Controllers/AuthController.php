@@ -22,8 +22,17 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid CRNO. Patient not found.'
+                'message' => 'Invalid CRNO.'
             ], 401);
+        }
+
+        if ($request->filled('password')) {
+            if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid CRNO or password.'
+                ], 401);
+            }
         }
 
         $token = $user->createToken('user-token')->plainTextToken;

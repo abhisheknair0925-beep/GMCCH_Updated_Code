@@ -18,8 +18,8 @@ const HospitalLogin = () => {
     }, []);
 
     // If already logged in, redirect away
-    const token = localStorage.getItem('token');
-    const hospital = localStorage.getItem('hospital');
+    const token = sessionStorage.getItem('token');
+    const hospital = sessionStorage.getItem('hospital');
     if (token && hospital) {
         return <Navigate to="/admin/dashboard" replace />;
     }
@@ -33,8 +33,8 @@ const HospitalLogin = () => {
         try {
             const response = await api.post('/hospital/login', { email, password });
             if (response.data.success) {
-                localStorage.setItem('token', response.data.data.token);
-                localStorage.setItem('hospital', JSON.stringify(response.data.data.hospital));
+                sessionStorage.setItem('token', response.data.data.token);
+                sessionStorage.setItem('hospital', JSON.stringify(response.data.data.hospital));
                 navigate(from, { replace: true });
             }
         } catch (err) {

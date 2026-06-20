@@ -11,8 +11,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
-  const token = localStorage.getItem('token');
-  const hospital = localStorage.getItem('hospital');
+  const token = sessionStorage.getItem('token');
+  const hospital = sessionStorage.getItem('hospital');
 
   if (!token || !hospital) {
     // Redirect to login, saving the current path so we can return after auth

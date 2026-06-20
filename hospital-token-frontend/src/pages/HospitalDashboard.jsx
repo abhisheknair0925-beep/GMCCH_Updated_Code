@@ -65,7 +65,7 @@ const HospitalDashboard = () => {
 
     useEffect(() => {
         document.title = 'Admin Dashboard — GMCC Hospital Thrissur';
-        const stored = localStorage.getItem('hospital');
+        const stored = sessionStorage.getItem('hospital');
         if (!stored) { navigate('/'); return; }
         setHospital(JSON.parse(stored));
         fetchData();
@@ -79,8 +79,8 @@ const HospitalDashboard = () => {
 
     const handleLogout = () => {
         dashboardCache.invalidateAll();
-        localStorage.removeItem('token');
-        localStorage.removeItem('hospital');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('hospital');
         navigate('/Adminlogin');
     };
 

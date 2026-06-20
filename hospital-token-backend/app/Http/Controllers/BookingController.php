@@ -33,9 +33,13 @@ class BookingController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error($e);
+            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
+                ? 'An unexpected database error occurred.'
+                : $e->getMessage();
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $message
             ], 400);
         }
     }

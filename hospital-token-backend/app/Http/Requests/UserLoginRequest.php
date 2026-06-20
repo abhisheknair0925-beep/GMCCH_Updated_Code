@@ -24,6 +24,7 @@ class UserLoginRequest extends FormRequest
     {
         return [
             'crno' => 'required|string',
+            'password' => 'nullable|string',
         ];
     }
 }

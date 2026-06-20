@@ -53,7 +53,11 @@ class DoctorController extends Controller
                 ]
             ], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+            \Log::error($e);
+            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
+                ? 'An unexpected database error occurred.'
+                : $e->getMessage();
+            return response()->json(['success' => false, 'message' => $message], 403);
         }
     }
 
@@ -77,7 +81,11 @@ class DoctorController extends Controller
                 'data' => $currentToken
             ], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+            \Log::error($e);
+            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
+                ? 'An unexpected database error occurred.'
+                : $e->getMessage();
+            return response()->json(['success' => false, 'message' => $message], 403);
         }
     }
 
@@ -122,7 +130,11 @@ class DoctorController extends Controller
             });
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+            \Log::error($e);
+            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
+                ? 'An unexpected database error occurred.'
+                : $e->getMessage();
+            return response()->json(['success' => false, 'message' => $message], 403);
         }
     }
 
@@ -149,7 +161,11 @@ class DoctorController extends Controller
             ], 200);
             
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+            \Log::error($e);
+            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
+                ? 'An unexpected database error occurred.'
+                : $e->getMessage();
+            return response()->json(['success' => false, 'message' => $message], 403);
         }
     }
 }

@@ -33,13 +33,18 @@ class ApiService {
     return '$storageBaseUrl/storage/$photoPath';
   }
 
-  static Future<Map<String, dynamic>> login(String crno) async {
+  static Future<Map<String, dynamic>> login(String crno, [String? password]) async {
     try {
       debugPrint('Attempting login to: $baseUrl/user/login with CRNO: $crno');
+      final Map<String, dynamic> bodyData = {'crno': crno};
+      if (password != null && password.isNotEmpty) {
+        bodyData['password'] = password;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/user/login'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'crno': crno}),
+        body: json.encode(bodyData),
       );
 
       debugPrint('Login Response Status: ${response.statusCode}');
