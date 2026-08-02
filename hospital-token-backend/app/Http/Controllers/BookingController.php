@@ -24,7 +24,12 @@ class BookingController extends Controller
         $userId = $request->user()->id;
 
         try {
-            $booking = $this->bookingService->createToken($userId, $request->unit_id, $request->type);
+            $booking = $this->bookingService->createToken(
+                $userId,
+                $request->unit_id,
+                $request->type,
+                'online'  // App users always book online
+            );
 
             return response()->json([
                 'success' => true,

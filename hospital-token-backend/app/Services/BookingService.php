@@ -3,104 +3,173 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\Hospital;
+use App\Models\Unit;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class BookingService
 {
+    // ── Token pool constants ────────────────────────────────────────────────
+    const MAX_TOKENS      = 150; // Total tokens per type per unit per day
+    const OFFLINE_STEP    = 5;   // Offline tokens: every multiple of 5
+    const MAX_OFFLINE     = 30;  // 5,10,...,150  → 150 / 5 = 30 slots
+    const MAX_ONLINE      = 120; // 150 - 30 = 120 online slots
+
     /**
-     * Create a new booking with concurrency safety and legacy rules.
+     * Create a booking token (online or offline).
      *
-     * @param int $userId
-     * @param int $unitId
-     * @param string $type
-     * @return Booking
+     * @param int    $userId   The patient's user ID
+     * @param int    $unitId   The unit being booked
+     * @param string $type     'chemo' or 'followup'
+     * @param string $source   'online' (app) or 'offline' (admin walk-in)
+     *
      * @throws Exception
      */
-    public function createToken(int $userId, int $unitId, string $type): Booking
+    public function createToken(int $userId, int $unitId, string $type, string $source = 'online'): Booking
     {
-        $bookingDate = Carbon::tomorrow()->toDateString();
+        // ── Date rule ────────────────────────────────────────────────────────
+        // Online  (app)   → always books for TOMORROW (prev-day booking)
+        // Offline (admin) → always books for TODAY    (walk-in patient)
+        $bookingDate = $source === 'offline'
+            ? Carbon::today()->toDateString()
+            : Carbon::tomorrow()->toDateString();
 
-        // 3 represents the number of times to retry the transaction if a deadlock occurs
-        return DB::transaction(function () use ($userId, $unitId, $type, $bookingDate) {
-            // 1. Global Rule: User can only book ONCE per day (any type or unit)
-            $existingBooking = Booking::where('user_id', $userId)
-                ->where('booking_date', $bookingDate)
-                ->whereIn('status', ['active', 'pending'])
-                ->first();
+        // ── Validate Unit Operating Day ──────────────────────────────────────
+        $unit = Unit::find($unitId);
+        if (!$unit) {
+            throw new Exception("Selected unit does not exist.");
+        }
+        
+        $targetDayName = Carbon::parse($bookingDate)->format('l'); // e.g. 'Monday'
+        if ($unit->day && $unit->day !== $targetDayName) {
+            $label = $source === 'offline' ? 'Today' : 'Tomorrow';
+            throw new Exception("This unit operates on {$unit->day}. You cannot book it for {$label} ({$targetDayName}).");
+        }
 
-            if ($existingBooking) {
-                throw new Exception('Already booked. You can only hold one active token per day.');
+        // Retry up to 5 times on deadlock
+        return DB::transaction(function () use ($userId, $unitId, $type, $source, $bookingDate) {
+
+            // ── 1. Prevent duplicate: one active token per user per day ────
+            if ($source === 'online') {
+                $existing = Booking::where('user_id', $userId)
+                    ->where('booking_date', $bookingDate)
+                    ->whereIn('status', ['active', 'pending'])
+                    ->first();
+
+                if ($existing) {
+                    throw new Exception('You already have a booking for tomorrow. Only one token allowed per day.');
+                }
             }
 
-            // 2. Capacity Rule
-            $maxLimit = ($type === 'chemo') ? 30 : 70;
-            
-            $currentCount = Booking::where('unit_id', $unitId)
+            // ── 2. Lock and fetch all booked token numbers for this slot ──
+            $bookedTokens = Booking::where('unit_id', $unitId)
                 ->where('type', $type)
                 ->where('booking_date', $bookingDate)
                 ->lockForUpdate()
-                ->count();
+                ->pluck('token_number')
+                ->toArray();
 
-            if ($currentCount >= $maxLimit) {
-                throw new Exception("Booking full for {$type}. Max {$maxLimit} tokens allowed per day.");
+            // ── 3. Find next available token number ───────────────────────
+            $nextToken = $this->findNextToken($source, $bookedTokens);
+
+            if ($nextToken === null) {
+                $label = $source === 'offline' ? 'Offline (walk-in)' : 'Online';
+                throw new Exception("{$label} tokens are fully booked for {$type} today. No more slots available.");
             }
 
-            // 3. Token Start Logic
-            $lastToken = Booking::where('unit_id', $unitId)
-                ->where('type', $type)
-                ->where('booking_date', $bookingDate)
-                ->lockForUpdate()
-                ->max('token_number');
-
-            $nextTokenRaw = $lastToken ? $lastToken + 1 : (($type === 'chemo') ? 11 : 71);
-
-            // 4. Token Slot Logic
-            $nextToken = $this->calculateToken($nextTokenRaw);
-
-            try {
-                // 5. Check auto-approve setting
-                $hospital = \App\Models\Hospital::first();
-                $isAutoApprove = $hospital && $hospital->auto_approve_bookings_until && Carbon::parse($hospital->auto_approve_bookings_until)->isFuture();
-                
+            // ── 4. Determine status ───────────────────────────────────────
+            // Offline bookings are always immediately active (admin confirmed).
+            // Online bookings check auto-approve setting.
+            if ($source === 'offline') {
+                $status = 'active';
+            } else {
+                $hospital = Hospital::first();
+                $isAutoApprove = $hospital
+                    && $hospital->auto_approve_bookings_until
+                    && Carbon::parse($hospital->auto_approve_bookings_until)->isFuture();
                 $status = $isAutoApprove ? 'active' : 'pending';
+            }
 
-                // 6. Create Booking
+            // ── 5. Create the booking ─────────────────────────────────────
+            try {
                 return Booking::create([
-                    'user_id' => $userId,
-                    'unit_id' => $unitId,
-                    'type' => $type,
+                    'user_id'      => $userId,
+                    'unit_id'      => $unitId,
+                    'type'         => $type,
                     'token_number' => $nextToken,
                     'booking_date' => $bookingDate,
-                    'status' => $status,
+                    'status'       => $status,
+                    'source'       => $source,
                 ]);
             } catch (\Illuminate\Database\QueryException $e) {
-                // Error code 23000 is for unique constraint violations (Duplicate Entry)
-                // Even with lockForUpdate, handling the exception is the ultimate safeguard
                 if ($e->getCode() == 23000) {
-                    throw new Exception('High traffic detected. Please try again in a few seconds.');
+                    throw new Exception('High demand detected. Please try again in a few seconds.');
                 }
                 throw $e;
             }
-        }, 5); // Retry transaction up to 5 times for deadlocks
+        }, 5);
     }
 
     /**
-     * The legacy token format logic. 
-     * Converts sequential input into the skipped slot format.
+     * Get availability counts for a unit/date across both token types.
+     * Returns remaining online and offline slots for chemo and followup.
      */
-    private function calculateToken(int $input): int
+    public function getAvailability(int $unitId, string $date): array
     {
-        $slot = (int)($input / 10);
-        
-        if ($slot % 2 === 0) {
-            if ($input % 5 !== 0) {
-                return $input + 10;
-            }
-            return $input;
+        $booked = Booking::where('unit_id', $unitId)
+            ->where('booking_date', $date)
+            ->whereIn('status', ['active', 'pending'])
+            ->get(['type', 'token_number']);
+
+        $result = [];
+        foreach (['chemo', 'followup'] as $type) {
+            $tokens = $booked->where('type', $type)->pluck('token_number')->toArray();
+
+            $offlineCount = count(array_filter($tokens, fn($t) => $t % self::OFFLINE_STEP === 0));
+            $onlineCount  = count($tokens) - $offlineCount;
+
+            $result[$type] = [
+                'online_booked'    => $onlineCount,
+                'online_remaining' => self::MAX_ONLINE - $onlineCount,
+                'offline_booked'   => $offlineCount,
+                'offline_remaining'=> self::MAX_OFFLINE - $offlineCount,
+                'total_booked'     => count($tokens),
+                'total_remaining'  => self::MAX_TOKENS - count($tokens),
+            ];
         }
-        
-        return $input;
+
+        return $result;
+    }
+
+    // ── Private helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Find the next available token number for the given source.
+     *
+     * Offline: multiples of 5 (5, 10, 15, …, 150)  — 30 slots
+     * Online:  non-multiples of 5 (1,2,3,4,6,…)    — 120 slots
+     *
+     * Returns null if no slot is available.
+     */
+    private function findNextToken(string $source, array $bookedTokens): ?int
+    {
+        if ($source === 'offline') {
+            for ($t = self::OFFLINE_STEP; $t <= self::MAX_TOKENS; $t += self::OFFLINE_STEP) {
+                if (!in_array($t, $bookedTokens)) {
+                    return $t;
+                }
+            }
+            return null;
+        }
+
+        // Online: find lowest non-multiple-of-5 not yet booked
+        for ($t = 1; $t <= self::MAX_TOKENS; $t++) {
+            if ($t % self::OFFLINE_STEP !== 0 && !in_array($t, $bookedTokens)) {
+                return $t;
+            }
+        }
+        return null;
     }
 }

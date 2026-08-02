@@ -11,6 +11,13 @@ const BookingTab = ({ onBookingChanged }) => {
     const [currentAutoApprove, setCurrentAutoApprove] = useState(null);
     const [savingSettings, setSavingSettings] = useState(false);
     const [error, setError] = useState('');
+    const [users, setUsers] = useState([]);
+    const [units, setUnits] = useState([]);
+    
+    // Offline Booking State
+    const [offlineForm, setOfflineForm] = useState({ user_id: '', unit_id: '', type: 'chemo' });
+    const [bookingLoading, setBookingLoading] = useState(false);
+    const [availability, setAvailability] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -19,9 +26,11 @@ const BookingTab = ({ onBookingChanged }) => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [bRes, sRes] = await Promise.all([
+            const [bRes, sRes, usersRes, unitsRes] = await Promise.all([
                 api.get('/hospital/bookings'),
-                api.get('/hospital/bookings/settings')
+                api.get('/hospital/bookings/settings'),
+                api.get('/hospital/users'),
+                api.get('/units')
             ]);
             
             if (bRes.data.success) {
@@ -30,8 +39,14 @@ const BookingTab = ({ onBookingChanged }) => {
             if (sRes.data.success) {
                 setCurrentAutoApprove(sRes.data.data.auto_approve_bookings_until);
             }
+            if (usersRes.data.success) {
+                setUsers(usersRes.data.data || []);
+            }
+            if (unitsRes.data.success) {
+                setUnits(unitsRes.data.data || []);
+            }
         } catch (err) {
-            setError('Failed to load bookings or settings.');
+            setError('Failed to load data.');
         } finally {
             setLoading(false);
             setSettingsLoading(false);
@@ -61,6 +76,40 @@ const BookingTab = ({ onBookingChanged }) => {
             alert('Failed to update settings.');
         } finally {
             setSavingSettings(false);
+        }
+    };
+
+    const handleCheckAvailability = async () => {
+        if (!offlineForm.unit_id) return;
+        try {
+            const res = await api.get(`/hospital/bookings/availability?unit_id=${offlineForm.unit_id}`);
+            if (res.data.success) {
+                setAvailability(res.data.data);
+            }
+        } catch (err) {
+            console.error('Failed to check availability', err);
+        }
+    };
+
+    useEffect(() => {
+        handleCheckAvailability();
+    }, [offlineForm.unit_id]);
+
+    const handleOfflineBooking = async (e) => {
+        e.preventDefault();
+        setBookingLoading(true);
+        try {
+            const res = await api.post('/hospital/bookings/offline', offlineForm);
+            if (res.data.success) {
+                alert(res.data.message);
+                setOfflineForm({ user_id: '', unit_id: '', type: 'chemo' });
+                fetchData();
+                handleCheckAvailability();
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Offline booking failed.');
+        } finally {
+            setBookingLoading(false);
         }
     };
 
@@ -125,6 +174,50 @@ const BookingTab = ({ onBookingChanged }) => {
                 </div>
             </div>
 
+            {/* Offline Token Booking Box */}
+            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', background: 'white' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <Settings size={20} color="#ff0088" />
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Offline Token Booking (Walk-in)</h3>
+                </div>
+                <form onSubmit={handleOfflineBooking} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Select Patient</label>
+                        <select className="input-field" value={offlineForm.user_id} onChange={(e) => setOfflineForm({ ...offlineForm, user_id: e.target.value })} required>
+                            <option value="">-- Choose Patient --</option>
+                            {users.map(u => <option key={u.id} value={u.id}>{u.name} (CR: {u.crno})</option>)}
+                        </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Select Unit</label>
+                        <select className="input-field" value={offlineForm.unit_id} onChange={(e) => setOfflineForm({ ...offlineForm, unit_id: e.target.value })} required>
+                            <option value="">-- Choose Unit --</option>
+                            {units.map(u => <option key={u.id} value={u.id}>{u.name} (Dr. {u.doctorName})</option>)}
+                        </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: '150px' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Token Type</label>
+                        <select className="input-field" value={offlineForm.type} onChange={(e) => setOfflineForm({ ...offlineForm, type: e.target.value })} required>
+                            <option value="chemo">Chemo</option>
+                            <option value="followup">Followup</option>
+                        </select>
+                    </div>
+                    <LoadingButton 
+                        loading={bookingLoading} 
+                        label="Book Offline Token"
+                        className="btn btn-primary" 
+                        style={{ whiteSpace: 'nowrap', padding: '0.75rem 1.25rem', background: '#ff0088', color: 'white', borderRadius: '8px', border: 'none', fontWeight: 600, height: '42px' }}
+                    />
+                </form>
+                {availability && offlineForm.unit_id && (
+                    <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', fontSize: '0.85rem', color: '#64748b' }}>
+                        <strong>Availability for Today: </strong>
+                        Chemo Offline Slots: <span style={{ color: availability.chemo.offline_remaining > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>{availability.chemo.offline_remaining} left</span> | 
+                        Followup Offline Slots: <span style={{ color: availability.followup.offline_remaining > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>{availability.followup.offline_remaining} left</span>
+                    </div>
+                )}
+            </div>
+
             {/* Bookings List */}
             <div className="glass-panel" style={{ background: 'white', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
@@ -158,6 +251,14 @@ const BookingTab = ({ onBookingChanged }) => {
                                     <td style={{ padding: '1rem' }}>
                                         <div style={{ fontWeight: 600, color: '#0f172a' }}>{b.booking_date}</div>
                                         <div style={{ fontSize: '0.85rem', color: '#ff0088', fontWeight: 800 }}>Token: {b.token_number}</div>
+                                        <div style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>
+                                            <span style={{ padding: '0.15rem 0.4rem', borderRadius: '4px', background: b.source === 'offline' ? '#ffedd5' : '#e0f2fe', color: b.source === 'offline' ? '#c2410c' : '#0369a1', fontWeight: 700 }}>
+                                                {b.source?.toUpperCase() || 'ONLINE'}
+                                            </span>
+                                            <span style={{ padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#f1f5f9', color: '#475569', fontWeight: 700, marginLeft: '0.3rem' }}>
+                                                {b.type?.toUpperCase()}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td style={{ padding: '1rem' }}>
                                         <span style={{

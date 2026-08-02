@@ -148,9 +148,7 @@ class DepartmentDoctorsScreen extends StatelessWidget {
             padding: const EdgeInsets.only(right: 20, top: 8, bottom: 4),
             child: TextButton(
               onPressed: () {
-                // If there's only one doctor, navigate directly to booking
-                // If multiple doctors, show selection dialog
-                if (doctors.length == 1) {
+                if (doctors.isNotEmpty) {
                   final units = doctors[0]['units'] as List<UnitModel>;
                   if (units.isNotEmpty) {
                     Navigator.push(
@@ -163,8 +161,6 @@ class DepartmentDoctorsScreen extends StatelessWidget {
                       ),
                     );
                   }
-                } else {
-                  _showDoctorSelectionDialog(context, doctors);
                 }
               },
               child: const Text(
@@ -198,63 +194,6 @@ class DepartmentDoctorsScreen extends StatelessWidget {
     );
   }
 
-  void _showDoctorSelectionDialog(BuildContext context, List<Map<String, dynamic>> doctors) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select Doctor',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ...doctors.map((doctor) {
-                final units = doctor['units'] as List<UnitModel>;
-                return ListTile(
-                  leading: _buildDoctorAvatar(doctor, width: 44, height: 50),
-                  title: Text(
-                    doctor['name'],
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    doctor['qualification'] ?? '',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFFFF0088)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    if (units.isNotEmpty) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BookingScreen(
-                            user: user,
-                            unit: units.first,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                );
-              }),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildDoctorCard(BuildContext context, Map<String, dynamic> doctor) {
     return Padding(

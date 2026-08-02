@@ -32,8 +32,8 @@ class HospitalDashboardController extends Controller
             ->groupBy('booking_date', 'status')
             ->get();
 
-        $todayStats = ['total' => 0, 'active' => 0, 'completed' => 0, 'cancelled' => 0];
-        $tomorrowStats = ['total' => 0, 'active' => 0, 'completed' => 0, 'cancelled' => 0];
+        $todayStats = ['total' => 0, 'active' => 0, 'pending' => 0, 'completed' => 0, 'cancelled' => 0];
+        $tomorrowStats = ['total' => 0, 'active' => 0, 'pending' => 0, 'completed' => 0, 'cancelled' => 0];
 
         foreach ($totals as $row) {
             if ($row->booking_date == $today) {
@@ -76,20 +76,29 @@ class HospitalDashboardController extends Controller
                 'unit_name'   => $unit->name,
                 'day'         => $unit->day,   // ← was missing; caused unit.day = undefined on frontend
                 'doctor_name' => $unit->doctor ? $unit->doctor->name : 'Unassigned',
-                'today'       => ['chemo' => 0, 'normal' => 0, 'completed' => 0, 'pending' => 0],
-                'tomorrow'    => ['chemo' => 0, 'normal' => 0],
+                'today'       => ['chemo' => 0, 'followup' => 0, 'normal' => 0, 'completed' => 0, 'pending' => 0],
+                'tomorrow'    => ['chemo' => 0, 'followup' => 0, 'normal' => 0],
             ];
         }
 
         foreach ($bookings as $row) {
             if (!isset($unitData[$row->unit_id])) continue;
             
+            // Ensure the type key exists in our initialized array
+            $type = $row->type;
+            if (!isset($unitData[$row->unit_id]['today'][$type])) {
+                $unitData[$row->unit_id]['today'][$type] = 0;
+            }
+            if (!isset($unitData[$row->unit_id]['tomorrow'][$type])) {
+                $unitData[$row->unit_id]['tomorrow'][$type] = 0;
+            }
+
             if ($row->booking_date == $today) {
-                $unitData[$row->unit_id]['today'][$row->type] += $row->count;
+                $unitData[$row->unit_id]['today'][$type] += $row->count;
                 if ($row->status == 'completed') $unitData[$row->unit_id]['today']['completed'] += $row->count;
                 if ($row->status == 'active') $unitData[$row->unit_id]['today']['pending'] += $row->count;
             } else {
-                $unitData[$row->unit_id]['tomorrow'][$row->type] += $row->count;
+                $unitData[$row->unit_id]['tomorrow'][$type] += $row->count;
             }
         }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 import '../services/api_service.dart';
@@ -16,18 +17,75 @@ class BookingScreen extends StatefulWidget {
 class _BookingScreenState extends State<BookingScreen> {
   bool _isLoading = false;
   Map<String, dynamic>? _bookingResult;
+  String _selectedType = 'chemo';
+  Map<String, dynamic>? _availability;
+  bool _isLoadingAvailability = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAvailability();
+  }
+
+  Future<void> _fetchAvailability() async {
+    final res = await ApiService.getAvailability(widget.unit.id, '');
+    if (res['success'] == true) {
+      setState(() {
+        _availability = res['data'];
+        _isLoadingAvailability = false;
+      });
+    } else {
+      setState(() {
+        _isLoadingAvailability = false;
+      });
+    }
+  }
+
+
+  void _handleBookingClick() {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final tomorrowWeekday = DateFormat('EEEE').format(tomorrow); // e.g. 'Monday'
+
+    if (widget.unit.day != null && widget.unit.day!.isNotEmpty && widget.unit.day != tomorrowWeekday) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Booking Unavailable', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          content: Text(
+            'This unit operates on ${widget.unit.day}.\n\nYou are trying to book for tomorrow ($tomorrowWeekday). Booking cannot be done for this day.',
+            style: const TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFFF0088))),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    _handleBooking();
+  }
 
   Future<void> _handleBooking() async {
     setState(() => _isLoading = true);
 
-    final result = await ApiService.createBooking(widget.user.id, widget.unit.id);
+    final result = await ApiService.createBooking(widget.user.id, widget.unit.id, _selectedType);
 
     setState(() {
       _isLoading = false;
       _bookingResult = result;
     });
 
-    if (result['status'] != true) {
+    if (result['status'] == true) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
+      });
+    } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -80,6 +138,36 @@ class _BookingScreenState extends State<BookingScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+          const Text(
+            'Token Type',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTypeOption('chemo', 'Chemo'),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: _buildTypeOption('followup', 'Followup'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _isLoadingAvailability
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : _availability != null
+                  ? Text(
+                      '${_availability![_selectedType]['online_remaining']} online slots remaining for tomorrow',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: _availability![_selectedType]['online_remaining'] > 0 ? Colors.green : Colors.red,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
           const SizedBox(height: 30),
           const Text(
             'Booking Information',
@@ -87,7 +175,7 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Booking for: Tomorrow',
+            'Booking for: Tomorrow (${DateFormat('dd MMM yyyy').format(DateTime.now().add(const Duration(days: 1)))})',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]),
           ),
           const Spacer(),
@@ -95,12 +183,15 @@ class _BookingScreenState extends State<BookingScreen> {
             width: double.infinity,
             height: 60,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleBooking,
+              onPressed: _isLoading || (_availability != null && _availability![_selectedType]['online_remaining'] == 0)
+                  ? null
+                  : _handleBookingClick,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF0088),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 elevation: 5,
+                disabledBackgroundColor: Colors.grey[300],
               ),
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
@@ -112,6 +203,38 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
           const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypeOption(String typeValue, String label) {
+    final isSelected = _selectedType == typeValue;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedType = typeValue;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFF0088) : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFFF0088) : Colors.grey.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: isSelected ? Colors.white : Colors.black87,
+            ),
+          ),
+        ),
       ),
     );
   }

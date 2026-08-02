@@ -12,7 +12,6 @@ class HospitalUserController extends Controller
 {
     /**
      * Number of rows inserted per database batch.
-     * Keeps memory usage low and avoids giant single queries.
      */
     private const CHUNK_SIZE = 50;
 
@@ -24,18 +23,18 @@ class HospitalUserController extends Controller
     }
 
     /**
-     * Search for a user by CR Number.
+     * List all users or search by CR Number.
      */
     public function index(Request $request)
     {
         $this->checkAccess($request);
 
         $crno = $request->query('crno');
-        
+
         if ($crno) {
             $formattedCrno = User::formatCrno($crno);
             $user = User::where('crno', $formattedCrno)->first();
-            
+
             if (!$user) {
                 return response()->json(['success' => false, 'message' => 'User not found', 'data' => []], 404);
             }
@@ -44,6 +43,17 @@ class HospitalUserController extends Controller
 
         $users = User::orderBy('id', 'desc')->get();
         return response()->json(['success' => true, 'data' => $users]);
+    }
+
+    /**
+     * Get a single user by ID.
+     */
+    public function show(Request $request, $id)
+    {
+        $this->checkAccess($request);
+
+        $user = User::findOrFail($id);
+        return response()->json(['success' => true, 'data' => $user]);
     }
 
     /**
@@ -83,21 +93,71 @@ class HospitalUserController extends Controller
     }
 
     /**
+     * Update an existing user's details.
+     */
+    public function update(Request $request, $id)
+    {
+        $this->checkAccess($request);
+
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'name'        => 'sometimes|string|max:255',
+            'user_age'    => 'nullable|integer|min:0|max:150',
+            'user_gender' => 'nullable|string|max:20',
+            'password'    => 'nullable|string|min:6',
+        ]);
+
+        $data = $request->only(['name', 'user_age', 'user_gender']);
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully',
+            'data'    => $user->fresh()
+        ]);
+    }
+
+    /**
+     * Delete a user.
+     * Guard: cannot delete if user has active bookings.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $this->checkAccess($request);
+
+        $user = User::findOrFail($id);
+
+        $activeBookings = $user->bookings()->where('status', 'active')->count();
+        if ($activeBookings > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete user. They have active bookings.'
+            ], 400);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User deleted successfully'
+        ]);
+    }
+
+    /**
      * Bulk import users from a CSV file.
-     *
-     * Strategy:
-     *  1. Reject files that exceed MAX_ROWS immediately (before any DB work).
-     *  2. Validate headers — file must contain 'name' and 'crno' columns.
-     *  3. Process in CHUNK_SIZE batches using DB::table()->insert() for speed.
-     *  4. Collect per-row errors without aborting the whole import.
-     *  5. Wrap everything in a transaction — rolled back only on unexpected exceptions.
      */
     public function bulkStore(Request $request)
     {
         $this->checkAccess($request);
 
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt|max:5120', // 5 MB max file size
+            'file' => 'required|file|mimes:csv,txt|max:5120',
         ]);
 
         $file   = $request->file('file');
@@ -107,14 +167,12 @@ class HospitalUserController extends Controller
             return response()->json(['success' => false, 'message' => 'Could not read the uploaded file.'], 422);
         }
 
-        // ── Step 1: Read & validate header row ───────────────────────────────
         $header = fgetcsv($handle);
         if (!$header) {
             fclose($handle);
             return response()->json(['success' => false, 'message' => 'The CSV file is empty.'], 422);
         }
 
-        // Normalize header names (trim whitespace, lowercase)
         $header = array_map(fn($col) => strtolower(trim($col)), $header);
 
         $requiredColumns = ['name', 'crno'];
@@ -128,7 +186,6 @@ class HospitalUserController extends Controller
             ], 422);
         }
 
-        // ── Step 2: Count rows ───────────────────────────────────────────────
         $rowCount = 0;
         while (fgetcsv($handle) !== false) {
             $rowCount++;
@@ -139,18 +196,16 @@ class HospitalUserController extends Controller
             return response()->json(['success' => false, 'message' => 'The CSV file has no data rows.'], 422);
         }
 
-        // ── Step 3: Rewind and process in batches ────────────────────────────
         rewind($handle);
-        fgetcsv($handle); // skip header again
+        fgetcsv($handle);
 
         $importedCount = 0;
         $skippedCount  = 0;
         $errors        = [];
         $batch         = [];
-        $rowNumber     = 1; // 1-based for user-facing error messages
+        $rowNumber     = 1;
         $now           = now()->toDateTimeString();
 
-        // Pre-fetch existing CRNOs to avoid N+1 exists() queries inside the loop
         $existingCrnos = User::pluck('crno')->flip()->all();
 
         DB::beginTransaction();
@@ -158,7 +213,6 @@ class HospitalUserController extends Controller
             while (($row = fgetcsv($handle)) !== false) {
                 $rowNumber++;
 
-                // Skip completely blank rows
                 if (count(array_filter($row, fn($v) => trim($v) !== '')) === 0) {
                     continue;
                 }
@@ -172,10 +226,9 @@ class HospitalUserController extends Controller
                 $data = array_combine($header, $row);
                 $name = trim($data['name'] ?? '');
                 $crno = trim($data['crno'] ?? '');
-                
+
                 $crno = User::formatCrno($crno);
 
-                // Basic per-row validation
                 if (empty($name) || empty($crno)) {
                     $errors[] = "Row {$rowNumber}: 'name' and 'crno' cannot be empty — skipped.";
                     $skippedCount++;
@@ -188,7 +241,6 @@ class HospitalUserController extends Controller
                     continue;
                 }
 
-                // Mark as seen so duplicates within the same file are caught
                 $existingCrnos[$crno] = true;
 
                 $batch[] = [
@@ -201,7 +253,6 @@ class HospitalUserController extends Controller
                     'updated_at'  => $now,
                 ];
 
-                // Flush batch when CHUNK_SIZE is reached
                 if (count($batch) >= self::CHUNK_SIZE) {
                     DB::table('users')->insert($batch);
                     $importedCount += count($batch);
@@ -209,7 +260,6 @@ class HospitalUserController extends Controller
                 }
             }
 
-            // Insert any remaining rows
             if (!empty($batch)) {
                 DB::table('users')->insert($batch);
                 $importedCount += count($batch);

@@ -24,7 +24,7 @@ class CreateBookingRequest extends FormRequest
     {
         return [
             'unit_id' => 'required|exists:units,id',
-            'type' => 'required|in:chemo,normal',
+            'type'    => 'required|in:chemo,followup',
         ];
     }
 }

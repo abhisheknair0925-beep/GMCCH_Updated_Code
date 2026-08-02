@@ -8,8 +8,8 @@ import '../models/unit_model.dart';
 class ApiService {
   // Configurable Base URL (10.0.2.2 is the host localhost for Android Emulator, localhost for macOS/iOS/web)
   static final String baseUrl = (!kIsWeb && Platform.isAndroid)
-      ? 'http://10.0.2.2:8001/api'
-      : 'http://localhost:8001/api';
+      ? 'http://10.0.2.2:8000/api'   // Android Emulator → host machine localhost
+      : 'http://localhost:8000/api';  // iOS/macOS/web → localhost
   
   // Store token in memory for session
   static String? _token;
@@ -120,7 +120,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> createBooking(int userId, int unitId) async {
+  static Future<Map<String, dynamic>> createBooking(int userId, int unitId, String type) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/booking/create'),
@@ -128,7 +128,7 @@ class ApiService {
         body: json.encode({
           'user_id': userId,
           'unit_id': unitId,
-          'type': 'normal', // Default or need to pass
+          'type': type,
         }),
       );
 
@@ -207,6 +207,18 @@ class ApiService {
         Uri.parse('$baseUrl/doctor/complete'),
         headers: _getHeaders(),
         body: json.encode({'unit_id': unitId}),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAvailability(int unitId, String date) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/booking/availability?unit_id=$unitId'),
+        headers: _getHeaders(),
       );
       return json.decode(response.body);
     } catch (e) {

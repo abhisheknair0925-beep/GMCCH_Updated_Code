@@ -39,4 +39,9 @@ class Doctor extends Authenticatable
     {
         return $this->hasMany(Unit::class);
     }
+
+    public function unit()
+    {
+        return $this->hasOne(Unit::class);
+    }
 }
