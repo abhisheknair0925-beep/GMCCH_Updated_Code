@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../../lib/axios';
-import { CheckCircle, XCircle, Clock, Settings, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Settings, AlertCircle, RefreshCw } from 'lucide-react';
 import Spinner, { LoadingButton } from '../Spinner';
 
 const BookingTab = ({ onBookingChanged }) => {
@@ -19,9 +19,77 @@ const BookingTab = ({ onBookingChanged }) => {
     const [bookingLoading, setBookingLoading] = useState(false);
     const [availability, setAvailability] = useState(null);
 
+    // Auto-refresh state
+    const AUTO_REFRESH_SECONDS = 5 * 60; // 5 minutes
+    const [countdown, setCountdown] = useState(AUTO_REFRESH_SECONDS);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const intervalRef = useRef(null);
+    const countdownRef = useRef(null);
+
     useEffect(() => {
         fetchData();
+        startAutoRefresh();
+        return () => {
+            clearInterval(intervalRef.current);
+            clearInterval(countdownRef.current);
+        };
     }, []);
+
+    const startAutoRefresh = useCallback(() => {
+        // Clear existing timers
+        clearInterval(intervalRef.current);
+        clearInterval(countdownRef.current);
+
+        // Reset countdown display
+        setCountdown(AUTO_REFRESH_SECONDS);
+
+        // Tick countdown every second
+        let secondsLeft = AUTO_REFRESH_SECONDS;
+        countdownRef.current = setInterval(() => {
+            secondsLeft -= 1;
+            setCountdown(secondsLeft);
+        }, 1000);
+
+        // Auto-refresh bookings list every 5 minutes
+        intervalRef.current = setInterval(async () => {
+            await refreshBookingsOnly();
+            // Restart countdown after each auto-refresh
+            clearInterval(countdownRef.current);
+            secondsLeft = AUTO_REFRESH_SECONDS;
+            setCountdown(AUTO_REFRESH_SECONDS);
+            countdownRef.current = setInterval(() => {
+                secondsLeft -= 1;
+                setCountdown(secondsLeft);
+            }, 1000);
+        }, AUTO_REFRESH_SECONDS * 1000);
+    }, []);
+
+    // Light refresh: only re-fetches the bookings list (no full page reload)
+    const refreshBookingsOnly = useCallback(async () => {
+        setIsRefreshing(true);
+        try {
+            const bRes = await api.get('/hospital/bookings');
+            if (bRes.data.success) {
+                setBookings(bRes.data.data.data || bRes.data.data);
+            }
+        } catch (err) {
+            console.error('Auto-refresh failed', err);
+        } finally {
+            setIsRefreshing(false);
+        }
+    }, []);
+
+    // Manual refresh: re-fetches bookings AND resets the 5-min countdown
+    const handleManualRefresh = useCallback(async () => {
+        await refreshBookingsOnly();
+        startAutoRefresh();
+    }, [refreshBookingsOnly, startAutoRefresh]);
+
+    const formatCountdown = (secs) => {
+        const m = Math.floor(secs / 60).toString().padStart(2, '0');
+        const s = (secs % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -117,8 +185,20 @@ const BookingTab = ({ onBookingChanged }) => {
 
     return (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Booking Management</h2>
+                {/* Countdown badge — shows when the next auto-refresh will happen */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    padding: '0.35rem 0.85rem',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem', color: '#64748b', fontWeight: 600
+                }}>
+                    <Clock size={13} />
+                    Auto-refreshes in <span style={{ color: '#ff0088', fontWeight: 800, marginLeft: '0.25rem' }}>{formatCountdown(countdown)}</span>
+                </div>
             </div>
 
             {error && (

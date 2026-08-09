@@ -71,7 +71,7 @@ class DepartmentDoctorsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('MINI'),
+        title: const Text('Book Token'),
         centerTitle: true,
         backgroundColor: const Color(0xFFFF0088),
         foregroundColor: Colors.white,

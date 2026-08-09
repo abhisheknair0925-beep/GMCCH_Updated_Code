@@ -6,10 +6,10 @@ import '../models/user_model.dart';
 import '../models/unit_model.dart';
 
 class ApiService {
-  // Configurable Base URL (10.0.2.2 is the host localhost for Android Emulator, localhost for macOS/iOS/web)
+  // MacBook Local IP: 192.168.1.154
   static final String baseUrl = (!kIsWeb && Platform.isAndroid)
-      ? 'http://10.0.2.2:8000/api'   // Android Emulator → host machine localhost
-      : 'http://localhost:8000/api';  // iOS/macOS/web → localhost
+      ? 'http://192.168.1.154:8000/api'   // Physical Device/Emulator → MacBook IP
+      : 'http://localhost:8000/api';      // macOS/iOS/web → localhost
   
   // Store token in memory for session
   static String? _token;

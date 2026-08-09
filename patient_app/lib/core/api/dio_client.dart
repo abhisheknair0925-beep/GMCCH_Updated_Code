@@ -8,7 +8,7 @@ final dioProvider = Provider((ref) {
   final dio = Dio(
     BaseOptions(
       baseUrl: (!kIsWeb && Platform.isAndroid)
-          ? 'http://10.0.2.2:8001/api'
+          ? 'http://192.168.1.154:8001/api' // MacBook Local IP
           : 'http://localhost:8001/api', // Dynamic URL for macOS/Android
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),

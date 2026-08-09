@@ -6,7 +6,6 @@ import '../models/user_model.dart';
 import '../models/unit_model.dart';
 import '../services/api_service.dart';
 import 'department_doctors_screen.dart';
-import 'my_bookings_screen.dart';
 import 'login_screen.dart';
 import 'my_token_screen.dart';
 
@@ -114,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: Text(_currentIndex == 0 ? 'Select Department' : _currentIndex == 1 ? 'My Token' : 'All Bookings'),
+          title: Text(_currentIndex == 0 ? 'Select Department' : 'My Token'),
           centerTitle: true,
           backgroundColor: const Color(0xFFFF0088),
           foregroundColor: Colors.white,
@@ -154,11 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        body: _currentIndex == 0
-            ? _buildHomeBody()
-            : _currentIndex == 1
-                ? _buildMyTokenBody()
-                : _buildBookingsBody(),
+        body: _currentIndex == 0 ? _buildHomeBody() : _buildMyTokenBody(),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: _onItemTapped,
@@ -172,10 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.confirmation_number_outlined),
               label: 'My Token',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt_outlined),
-              label: 'Bookings',
             ),
           ],
         ),
@@ -266,10 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return MyTokenScreen(user: widget.user, hideAppBar: true);
   }
 
-  // --- BOOKINGS TAB ---
-  Widget _buildBookingsBody() {
-    return MyBookingsScreen(user: widget.user, hideAppBar: true);
-  }
+
 
   Widget _buildDepartmentCard(BuildContext context, String departmentName, List<UnitModel> units) {
     // Count unique doctors in this department
