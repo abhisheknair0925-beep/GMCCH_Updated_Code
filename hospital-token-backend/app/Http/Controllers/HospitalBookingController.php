@@ -27,7 +27,7 @@ class HospitalBookingController extends Controller
     {
         $this->checkAccess($request);
 
-        $query = Booking::with(['user', 'unit.doctor'])
+        $query = Booking::with(['user', 'unit.doctors'])
             ->orderBy('booking_date', 'desc')
             ->orderBy('id', 'desc');
 
@@ -72,7 +72,7 @@ class HospitalBookingController extends Controller
                 'offline'   // Admin walk-in booking for TODAY
             );
 
-            $booking->load(['user', 'unit.doctor']);
+            $booking->load(['user', 'unit.doctors']);
 
             return response()->json([
                 'success' => true,

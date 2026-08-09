@@ -10,7 +10,6 @@ class Unit extends Model
     use HasFactory;
 
     protected $fillable = [
-        'doctor_id',
         'name',
         'day',
         'time',
@@ -18,9 +17,17 @@ class Unit extends Model
         'slot_duration',
     ];
 
-    public function doctor()
+    protected $appends = ['doctor'];
+
+    public function getDoctorAttribute()
     {
-        return $this->belongsTo(Doctor::class);
+        // Return the first doctor of this unit for backward compatibility
+        return $this->doctors->first();
+    }
+
+    public function doctors()
+    {
+        return $this->hasMany(Doctor::class);
     }
 
     public function bookings()

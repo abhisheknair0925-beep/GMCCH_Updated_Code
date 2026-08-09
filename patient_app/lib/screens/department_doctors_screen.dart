@@ -16,52 +16,27 @@ class DepartmentDoctorsScreen extends StatelessWidget {
     required this.user,
   });
 
-  /// Groups doctors by their set of OP days.
-  /// Returns a list of maps: { 'days': 'Monday, Wednesday', 'doctors': [ {unit, name, qualification, photo} ] }
+  /// Groups doctors by their set of OP days using the new Unit-Doctor relation.
   List<Map<String, dynamic>> _buildOpDayGroups() {
-    // Step 1: Group units by doctorId to collect each doctor's OP days and info
-    final Map<int, Map<String, dynamic>> doctorMap = {};
+    final List<Map<String, dynamic>> groups = [];
 
     for (final unit in departmentUnits) {
-      final doctorId = unit.doctorId ?? unit.id; // fallback to unit id
-      if (!doctorMap.containsKey(doctorId)) {
-        doctorMap[doctorId] = {
-          'doctorId': doctorId,
-          'name': unit.doctorName,
-          'qualification': unit.doctorQualification ?? '',
-          'photo': unit.doctorPhoto,
-          'days': <String>[],
-          'units': <UnitModel>[],
-        };
-      }
-      if (unit.day != null && unit.day!.isNotEmpty) {
-        doctorMap[doctorId]!['days'].add(unit.day!);
-      }
-      doctorMap[doctorId]!['units'].add(unit);
+      if (unit.doctors.isEmpty) continue;
+
+      final mappedDoctors = unit.doctors.map((doc) => {
+        'name': doc.name,
+        'qualification': doc.qualification ?? '',
+        'photo': doc.photo,
+        'units': [unit],
+      }).toList();
+
+      groups.add({
+        'days': unit.day ?? 'Not Scheduled',
+        'doctors': mappedDoctors,
+      });
     }
 
-    // Step 2: Group doctors that share the same set of OP days
-    final Map<String, List<Map<String, dynamic>>> dayGroupMap = {};
-
-    for (final doctor in doctorMap.values) {
-      final days = List<String>.from(doctor['days']);
-      // Sort days by weekday order for consistent display
-      final dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-      days.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
-      final dayKey = days.isNotEmpty ? days.join(', ') : 'Not Scheduled';
-      if (!dayGroupMap.containsKey(dayKey)) {
-        dayGroupMap[dayKey] = [];
-      }
-      dayGroupMap[dayKey]!.add(doctor);
-    }
-
-    // Step 3: Convert to list
-    return dayGroupMap.entries.map((entry) {
-      return {
-        'days': entry.key,
-        'doctors': entry.value,
-      };
-    }).toList();
+    return groups;
   }
 
   @override

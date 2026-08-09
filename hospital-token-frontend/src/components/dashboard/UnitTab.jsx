@@ -181,10 +181,12 @@ const UnitTab = ({ units, onUnitAdded }) => {
                         </h3>
                     </div>
 
+                    <p style={s.desc}>Standard hospital units configured for token allocation.</p>
+
                     {units.length === 0 ? (
-                        <p style={s.desc}>No units have been created yet.</p>
+                        <p style={s.desc}>No units loaded.</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '520px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                             {units.map(unit => (
                                 editingId === unit.unit_id ? (
                                     <EditRow
@@ -201,8 +203,8 @@ const UnitTab = ({ units, onUnitAdded }) => {
                                             </div>
                                             <div>
                                                 <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>{unit.unit_name}</p>
-                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
-                                                    Dr. {unit.doctor_name || 'Not assigned'}
+                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+                                                    Doctors: <strong style={{ color: '#0f172a' }}>{unit.doctor_name || 'None assigned'}</strong>
                                                 </p>
                                             </div>
                                         </div>

@@ -57,7 +57,7 @@ class BookingController extends Controller
             return response()->json(['success' => false, 'message' => 'Doctors cannot fetch patient bookings here.'], 403);
         }
 
-        $bookings = Booking::with(['unit.doctor'])
+        $bookings = Booking::with(['unit.doctors'])
             ->where('user_id', $user->id)
             ->orderBy('booking_date', 'desc')
             ->get();
@@ -100,7 +100,7 @@ class BookingController extends Controller
         }
 
         // SECURITY: Ensure the doctor is assigned to this specific unit
-        if (!$doctor->units()->where('id', $unit_id)->exists()) {
+        if ($doctor->unit_id !== (int)$unit_id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized. You are not assigned to this unit.'], 403);
         }
 

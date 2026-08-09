@@ -16,7 +16,7 @@ class DoctorController extends Controller
             abort(403, 'Unauthorized. Only doctors can perform this action.');
         }
 
-        if (!$doctor->units()->where('id', $unit_id)->exists()) {
+        if ($doctor->unit_id !== (int)$unit_id) {
             abort(403, 'Unauthorized. You are not assigned to this unit.');
         }
     }

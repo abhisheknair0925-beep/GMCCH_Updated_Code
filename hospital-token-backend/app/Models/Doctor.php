@@ -21,6 +21,7 @@ class Doctor extends Authenticatable
         'gender',
         'regno',
         'photo',
+        'unit_id',
     ];
 
     protected $hidden = [
@@ -35,13 +36,8 @@ class Doctor extends Authenticatable
         ];
     }
 
-    public function units()
-    {
-        return $this->hasMany(Unit::class);
-    }
-
     public function unit()
     {
-        return $this->hasOne(Unit::class);
+        return $this->belongsTo(Unit::class);
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Booking;
-use App\Models\HospitalUnit;
+use App\Models\Unit;
 use Carbon\Carbon;
 
 class DisplayController extends Controller
@@ -14,7 +14,7 @@ class DisplayController extends Controller
      */
     public function index($unit_id)
     {
-        $unit = HospitalUnit::with('doctor')->findOrFail($unit_id);
+        $unit = Unit::with('doctors')->findOrFail($unit_id);
         
         // Using today's date for live TV display
         $today = Carbon::today()->toDateString();

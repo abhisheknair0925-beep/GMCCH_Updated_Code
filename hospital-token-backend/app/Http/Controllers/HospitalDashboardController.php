@@ -61,7 +61,7 @@ class HospitalDashboardController extends Controller
         $today = Carbon::today()->toDateString();
         $tomorrow = Carbon::tomorrow()->toDateString();
 
-        $units = Unit::with(['doctor'])->get();
+        $units = Unit::with(['doctors'])->get();
 
         $bookings = Booking::select('unit_id', 'type', 'booking_date', 'status', DB::raw('count(*) as count'))
             ->whereIn('booking_date', [$today, $tomorrow])
@@ -75,7 +75,7 @@ class HospitalDashboardController extends Controller
                 'unit_id'     => $unit->id,
                 'unit_name'   => $unit->name,
                 'day'         => $unit->day,   // ← was missing; caused unit.day = undefined on frontend
-                'doctor_name' => $unit->doctor ? $unit->doctor->name : 'Unassigned',
+                'doctor_name' => $unit->doctors->isNotEmpty() ? $unit->doctors->pluck('name')->implode(', ') : 'Unassigned',
                 'today'       => ['chemo' => 0, 'followup' => 0, 'normal' => 0, 'completed' => 0, 'pending' => 0],
                 'tomorrow'    => ['chemo' => 0, 'followup' => 0, 'normal' => 0],
             ];
@@ -114,7 +114,7 @@ class HospitalDashboardController extends Controller
 
         $today = Carbon::today()->toDateString();
 
-        $doctors = Doctor::with('units')->get();
+        $doctors = Doctor::with('unit')->get();
         $doctorUnitMap = [];
         
         $doctorData = [];
@@ -122,13 +122,13 @@ class HospitalDashboardController extends Controller
             $doctorData[$doctor->id] = [
                 'doctor_id' => $doctor->id,
                 'doctor_name' => $doctor->name,
-                'total_assigned_units' => $doctor->units->count(),
+                'total_assigned_units' => $doctor->unit ? 1 : 0,
                 'today_patients_seen' => 0,
                 'today_patients_waiting' => 0,
             ];
             
-            foreach ($doctor->units as $unit) {
-                $doctorUnitMap[$unit->id] = $doctor->id;
+            if ($doctor->unit) {
+                $doctorUnitMap[$doctor->unit->id] = $doctor->id;
             }
         }
 

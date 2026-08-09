@@ -27,6 +27,7 @@ const HospitalDashboard = () => {
     const [loadError,   setLoadError]   = useState(false);
     const [refreshing,  setRefreshing]  = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
+    const [bookingRefreshKey, setBookingRefreshKey] = useState(0);
 
     const navigate = useNavigate();
 
@@ -88,6 +89,8 @@ const HospitalDashboard = () => {
         dashboardCache.invalidate(CACHE_KEYS.SUMMARY);
         dashboardCache.invalidate(CACHE_KEYS.UNITS);
         fetchData(true);
+        // Also trigger a fresh fetch inside BookingTab if it's active
+        setBookingRefreshKey(k => k + 1);
         setMobileOpen(false);
     };
 
@@ -185,7 +188,7 @@ const HospitalDashboard = () => {
                         {activeTab === 'users'    && <UserTab />}
                         {activeTab === 'doctors'  && <DoctorTab units={units} onDoctorAdded={handleMutation} />}
                         {activeTab === 'units'    && <UnitTab units={units} onUnitAdded={handleMutation} />}
-                        {activeTab === 'bookings' && <BookingTab onBookingChanged={handleMutation} />}
+                        {activeTab === 'bookings' && <BookingTab onBookingChanged={handleMutation} refreshKey={bookingRefreshKey} />}
                     </>
                 )}
             </main>

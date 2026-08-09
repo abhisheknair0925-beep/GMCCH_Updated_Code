@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../../lib/axios';
-import { CheckCircle, XCircle, Clock, Settings, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Settings, AlertCircle, RefreshCw } from 'lucide-react';
 import Spinner, { LoadingButton } from '../Spinner';
+import SearchableSelect from '../SearchableSelect';
 
-const BookingTab = ({ onBookingChanged }) => {
+const BookingTab = ({ onBookingChanged, refreshKey = 0 }) => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [settingsLoading, setSettingsLoading] = useState(true);
@@ -21,46 +22,27 @@ const BookingTab = ({ onBookingChanged }) => {
 
     // Auto-refresh state
     const AUTO_REFRESH_SECONDS = 5 * 60; // 5 minutes
-    const [countdown, setCountdown] = useState(AUTO_REFRESH_SECONDS);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const intervalRef = useRef(null);
-    const countdownRef = useRef(null);
 
     useEffect(() => {
         fetchData();
         startAutoRefresh();
         return () => {
             clearInterval(intervalRef.current);
-            clearInterval(countdownRef.current);
         };
     }, []);
 
+    // Re-fetch when the navbar Refresh button is clicked (refreshKey increments)
+    useEffect(() => {
+        if (refreshKey > 0) fetchData();
+    }, [refreshKey]);
+
     const startAutoRefresh = useCallback(() => {
-        // Clear existing timers
         clearInterval(intervalRef.current);
-        clearInterval(countdownRef.current);
-
-        // Reset countdown display
-        setCountdown(AUTO_REFRESH_SECONDS);
-
-        // Tick countdown every second
-        let secondsLeft = AUTO_REFRESH_SECONDS;
-        countdownRef.current = setInterval(() => {
-            secondsLeft -= 1;
-            setCountdown(secondsLeft);
-        }, 1000);
-
-        // Auto-refresh bookings list every 5 minutes
+        // Silently auto-refresh bookings list every 5 minutes
         intervalRef.current = setInterval(async () => {
             await refreshBookingsOnly();
-            // Restart countdown after each auto-refresh
-            clearInterval(countdownRef.current);
-            secondsLeft = AUTO_REFRESH_SECONDS;
-            setCountdown(AUTO_REFRESH_SECONDS);
-            countdownRef.current = setInterval(() => {
-                secondsLeft -= 1;
-                setCountdown(secondsLeft);
-            }, 1000);
         }, AUTO_REFRESH_SECONDS * 1000);
     }, []);
 
@@ -85,11 +67,6 @@ const BookingTab = ({ onBookingChanged }) => {
         startAutoRefresh();
     }, [refreshBookingsOnly, startAutoRefresh]);
 
-    const formatCountdown = (secs) => {
-        const m = Math.floor(secs / 60).toString().padStart(2, '0');
-        const s = (secs % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -185,20 +162,8 @@ const BookingTab = ({ onBookingChanged }) => {
 
     return (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Booking Management</h2>
-                {/* Countdown badge — shows when the next auto-refresh will happen */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: '0.4rem',
-                    padding: '0.35rem 0.85rem',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '0.8rem', color: '#64748b', fontWeight: 600
-                }}>
-                    <Clock size={13} />
-                    Auto-refreshes in <span style={{ color: '#ff0088', fontWeight: 800, marginLeft: '0.25rem' }}>{formatCountdown(countdown)}</span>
-                </div>
             </div>
 
             {error && (
@@ -263,17 +228,23 @@ const BookingTab = ({ onBookingChanged }) => {
                 <form onSubmit={handleOfflineBooking} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Select Patient</label>
-                        <select className="input-field" value={offlineForm.user_id} onChange={(e) => setOfflineForm({ ...offlineForm, user_id: e.target.value })} required>
-                            <option value="">-- Choose Patient --</option>
-                            {users.map(u => <option key={u.id} value={u.id}>{u.name} (CR: {u.crno})</option>)}
-                        </select>
+                        <SearchableSelect
+                            options={users.map(u => ({ value: u.id, label: `${u.name} (CR: ${u.crno})` }))}
+                            value={offlineForm.user_id}
+                            onChange={(val) => setOfflineForm({ ...offlineForm, user_id: val })}
+                            placeholder="Search patient by name or CR..."
+                            required
+                        />
                     </div>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Select Unit</label>
-                        <select className="input-field" value={offlineForm.unit_id} onChange={(e) => setOfflineForm({ ...offlineForm, unit_id: e.target.value })} required>
-                            <option value="">-- Choose Unit --</option>
-                            {units.map(u => <option key={u.id} value={u.id}>{u.name} (Dr. {u.doctorName})</option>)}
-                        </select>
+                        <SearchableSelect
+                            options={units.map(u => ({ value: u.id, label: `${u.name} (Dr. ${u.doctorName})` }))}
+                            value={offlineForm.unit_id}
+                            onChange={(val) => setOfflineForm({ ...offlineForm, unit_id: val })}
+                            placeholder="Search unit or doctor..."
+                            required
+                        />
                     </div>
                     <div style={{ flex: 1, minWidth: '150px' }}>
                         <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Token Type</label>

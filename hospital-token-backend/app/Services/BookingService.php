@@ -12,10 +12,7 @@ use Exception;
 class BookingService
 {
     // ── Token pool constants ────────────────────────────────────────────────
-    const MAX_TOKENS      = 150; // Total tokens per type per unit per day
-    const OFFLINE_STEP    = 5;   // Offline tokens: every multiple of 5
-    const MAX_OFFLINE     = 30;  // 5,10,...,150  → 150 / 5 = 30 slots
-    const MAX_ONLINE      = 120; // 150 - 30 = 120 online slots
+    const MAX_TOKENS      = 300; // Total tokens per unit per day
 
     /**
      * Create a booking token (online or offline).
@@ -72,7 +69,7 @@ class BookingService
                 ->toArray();
 
             // ── 3. Find next available token number ───────────────────────
-            $nextToken = $this->findNextToken($source, $bookedTokens);
+            $nextToken = $this->findNextToken($type, $source, $bookedTokens);
 
             if ($nextToken === null) {
                 $label = $source === 'offline' ? 'Offline (walk-in)' : 'Online';
@@ -121,23 +118,43 @@ class BookingService
         $booked = Booking::where('unit_id', $unitId)
             ->where('booking_date', $date)
             ->whereIn('status', ['active', 'pending'])
-            ->get(['type', 'token_number']);
+            ->get(['type', 'token_number', 'source']);
 
         $result = [];
         foreach (['chemo', 'followup'] as $type) {
             $tokens = $booked->where('type', $type)->pluck('token_number')->toArray();
 
-            $offlineCount = count(array_filter($tokens, fn($t) => $t % self::OFFLINE_STEP === 0));
-            $onlineCount  = count($tokens) - $offlineCount;
-
-            $result[$type] = [
-                'online_booked'    => $onlineCount,
-                'online_remaining' => self::MAX_ONLINE - $onlineCount,
-                'offline_booked'   => $offlineCount,
-                'offline_remaining'=> self::MAX_OFFLINE - $offlineCount,
-                'total_booked'     => count($tokens),
-                'total_remaining'  => self::MAX_TOKENS - count($tokens),
-            ];
+            if ($type === 'chemo') {
+                $onlineBooked = 0;
+                $offlineBooked = 0;
+                foreach ($tokens as $t) {
+                    if ($this->isOnlineChemoToken($t)) {
+                        $onlineBooked++;
+                    } else {
+                        $offlineBooked++;
+                    }
+                }
+                $result['chemo'] = [
+                    'online_booked'    => $onlineBooked,
+                    'online_remaining' => max(0, 64 - $onlineBooked),
+                    'offline_booked'   => $offlineBooked,
+                    'offline_remaining'=> max(0, 86 - $offlineBooked),
+                    'total_booked'     => count($tokens),
+                    'total_remaining'  => max(0, 150 - count($tokens)),
+                ];
+            } else {
+                $totalBooked = count($tokens);
+                $onlineBooked = $booked->where('type', 'followup')->where('source', 'online')->count();
+                $offlineBooked = $booked->where('type', 'followup')->where('source', 'offline')->count();
+                $result['followup'] = [
+                    'online_booked'    => $onlineBooked,
+                    'online_remaining' => max(0, 150 - $totalBooked),
+                    'offline_booked'   => $offlineBooked,
+                    'offline_remaining'=> max(0, 150 - $totalBooked),
+                    'total_booked'     => $totalBooked,
+                    'total_remaining'  => max(0, 150 - $totalBooked),
+                ];
+            }
         }
 
         return $result;
@@ -146,17 +163,49 @@ class BookingService
     // ── Private helpers ─────────────────────────────────────────────────────
 
     /**
-     * Find the next available token number for the given source.
-     *
-     * Offline: multiples of 5 (5, 10, 15, …, 150)  — 30 slots
-     * Online:  non-multiples of 5 (1,2,3,4,6,…)    — 120 slots
-     *
-     * Returns null if no slot is available.
+     * Helper to check if a token number matches the Online Chemo constraints.
      */
-    private function findNextToken(string $source, array $bookedTokens): ?int
+    private function isOnlineChemoToken(int $t): bool
     {
-        if ($source === 'offline') {
-            for ($t = self::OFFLINE_STEP; $t <= self::MAX_TOKENS; $t += self::OFFLINE_STEP) {
+        if ($t < 1 || $t > 150) {
+            return false;
+        }
+        $tens = (int)($t / 10);
+        if ($tens % 2 !== 0) {
+            return false;
+        }
+        $units = $t % 10;
+        return in_array($units, [1, 2, 3, 4, 6, 7, 8, 9]);
+    }
+
+    /**
+     * Find the next available token number for the given type and source.
+     */
+    private function findNextToken(string $type, string $source, array $bookedTokens): ?int
+    {
+        if ($type === 'chemo') {
+            if ($source === 'online') {
+                // Online Chemo: must be in even-tens blocks and not end in 5 or 0
+                for ($t = 1; $t <= 150; $t++) {
+                    if ($this->isOnlineChemoToken($t) && !in_array($t, $bookedTokens)) {
+                        return $t;
+                    }
+                }
+                return null;
+            } else {
+                // Offline Chemo: any number from 1 to 150 that is NOT an online chemo token
+                for ($t = 1; $t <= 150; $t++) {
+                    if (!$this->isOnlineChemoToken($t) && !in_array($t, $bookedTokens)) {
+                        return $t;
+                    }
+                }
+                return null;
+            }
+        }
+
+        if ($type === 'followup') {
+            // Followups: sequential starting at 151 to 300
+            for ($t = 151; $t <= 300; $t++) {
                 if (!in_array($t, $bookedTokens)) {
                     return $t;
                 }
@@ -164,12 +213,6 @@ class BookingService
             return null;
         }
 
-        // Online: find lowest non-multiple-of-5 not yet booked
-        for ($t = 1; $t <= self::MAX_TOKENS; $t++) {
-            if ($t % self::OFFLINE_STEP !== 0 && !in_array($t, $bookedTokens)) {
-                return $t;
-            }
-        }
         return null;
     }
 }

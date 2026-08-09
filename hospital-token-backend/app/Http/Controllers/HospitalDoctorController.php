@@ -89,12 +89,8 @@ class HospitalDoctorController extends Controller
             'gender'        => $request->gender,
             'regno'         => $request->regno,
             'photo'         => $photoPath,
+            'unit_id'       => $request->unit_id,
         ]);
-
-        // Assign to unit
-        $unit = Unit::find($request->unit_id);
-        $unit->doctor_id = $doctor->id;
-        $unit->save();
 
         return response()->json([
             'success' => true,
@@ -125,7 +121,7 @@ class HospitalDoctorController extends Controller
             'photo'         => 'nullable|image|mimes:jpeg,png|max:2048',
         ]);
 
-        $data = $request->only(['name', 'qualification', 'department', 'phone', 'gender']);
+        $data = $request->only(['name', 'qualification', 'department', 'phone', 'gender', 'unit_id']);
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
@@ -141,14 +137,6 @@ class HospitalDoctorController extends Controller
         }
 
         $doctor->update($data);
-
-        // Reassign unit if changed
-        if ($request->filled('unit_id') && $request->unit_id != $doctor->unit?->id) {
-            // Unassign from old unit
-            Unit::where('doctor_id', $doctor->id)->update(['doctor_id' => null]);
-            // Assign to new unit
-            Unit::find($request->unit_id)->update(['doctor_id' => $doctor->id]);
-        }
 
         $doctor->refresh()->load('unit');
 
@@ -172,9 +160,6 @@ class HospitalDoctorController extends Controller
         $this->checkAccess($request);
 
         $doctor = Doctor::findOrFail($id);
-
-        // Unassign doctor from any unit
-        Unit::where('doctor_id', $doctor->id)->update(['doctor_id' => null]);
 
         // Delete photo if exists
         if ($doctor->photo) {
