@@ -40,7 +40,8 @@ class BookingService
         }
         
         $targetDayName = Carbon::parse($bookingDate)->format('l'); // e.g. 'Monday'
-        if ($unit->day && $unit->day !== $targetDayName) {
+        $unitDays = $unit->day ? array_map('trim', explode(',', $unit->day)) : [];
+        if (!empty($unitDays) && !in_array($targetDayName, $unitDays)) {
             $label = $source === 'offline' ? 'Today' : 'Tomorrow';
             throw new Exception("This unit operates on {$unit->day}. You cannot book it for {$label} ({$targetDayName}).");
         }

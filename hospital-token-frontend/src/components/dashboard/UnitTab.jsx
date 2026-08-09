@@ -57,14 +57,24 @@ const DeleteModal = ({ unit, onClose, onDeleted }) => {
 // ── Inline Edit Row ─────────────────────────────────────────────────────────
 const EditRow = ({ unit, onSaved, onCancel }) => {
     const toast = useToast();
-    const [name,    setName]    = useState(unit.unit_name);
-    const [day,     setDay]     = useState(unit.day || 'Monday');
+    const [name, setName] = useState(unit.unit_name);
+    const [editDays, setEditDays] = useState(
+        unit.day ? unit.day.split(',').map(d => d.trim()).filter(Boolean) : ['Monday']
+    );
     const [loading, setLoading] = useState(false);
+
+    const toggleDay = (d) => {
+        setEditDays(prev => 
+            prev.includes(d) 
+                ? (prev.length > 1 ? prev.filter(item => item !== d) : prev) 
+                : [...prev, d]
+        );
+    };
 
     const handleSave = async () => {
         setLoading(true);
         try {
-            await api.put(`/hospital/units/${unit.unit_id}`, { name, day });
+            await api.put(`/hospital/units/${unit.unit_id}`, { name, day: editDays.join(', ') });
             toast.success(`Unit "${name}" updated.`);
             onSaved();
         } catch (err) {
@@ -79,14 +89,39 @@ const EditRow = ({ unit, onSaved, onCancel }) => {
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 <div style={s.unitBadge}>{(name || '?').charAt(0)}</div>
                 <input
-                    style={{ ...s.inlineInput, flex: 2 }}
+                    style={{ ...s.inlineInput, flex: 1 }}
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Unit name"
                 />
-                <select style={{ ...s.inlineInput, flex: 1 }} value={day} onChange={e => setDay(e.target.value)}>
-                    {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+            </div>
+            {/* Multi-day selection pills for editing */}
+            <div>
+                <label style={{ ...s.label, fontSize: '0.65rem', marginBottom: '0.25rem' }}>Select Operating Days</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                    {DAYS.map(d => {
+                        const active = editDays.includes(d);
+                        return (
+                            <button
+                                key={d}
+                                type="button"
+                                onClick={() => toggleDay(d)}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '6px',
+                                    border: active ? '1px solid #ff0088' : '1px solid #cbd5e1',
+                                    background: active ? '#ff0088' : 'white',
+                                    color: active ? 'white' : '#64748b',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {d.substring(0, 3)}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                 <button onClick={onCancel} disabled={loading} style={s.btnCancel}><X size={13} /> Cancel</button>
@@ -108,17 +143,30 @@ const UnitTab = ({ units, onUnitAdded }) => {
     const toast = useToast();
 
     const [form,       setForm]       = useState(EMPTY_UNIT);
+    const [addDays,    setAddDays]    = useState(['Monday']);
     const [loading,    setLoading]    = useState(false);
     const [editingId,  setEditingId]  = useState(null);  // unit_id being edited inline
     const [deleteUnit, setDeleteUnit] = useState(null);
+
+    const toggleAddDay = (d) => {
+        setAddDays(prev => 
+            prev.includes(d) 
+                ? (prev.length > 1 ? prev.filter(item => item !== d) : prev) 
+                : [...prev, d]
+        );
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/hospital/units', form);
-            toast.success(`Unit "${form.name}" created for ${form.day}.`);
+            await api.post('/hospital/units', {
+                ...form,
+                day: addDays.join(', ')
+            });
+            toast.success(`Unit "${form.name}" created for ${addDays.join(', ')}.`);
             setForm(EMPTY_UNIT);
+            setAddDays(['Monday']);
             onUnitAdded?.();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to create unit.');
@@ -148,7 +196,7 @@ const UnitTab = ({ units, onUnitAdded }) => {
                         <Layers size={18} color="#ff0088" />
                         <h3 style={{ margin: 0, fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>Add New Unit</h3>
                     </div>
-                    <p style={s.desc}>Create a unit by number and assign its operating day.</p>
+                    <p style={s.desc}>Create a unit by number and assign its operating days.</p>
 
                     <form onSubmit={handleSubmit}>
                         <div style={{ marginBottom: '0.85rem' }}>
@@ -162,10 +210,32 @@ const UnitTab = ({ units, onUnitAdded }) => {
                             />
                         </div>
                         <div style={{ marginBottom: '1.25rem' }}>
-                            <label style={s.label}>Operating Day *</label>
-                            <select style={s.input} value={form.day} onChange={e => setForm({ ...form, day: e.target.value })} required>
-                                {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
+                            <label style={s.label}>Operating Days *</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.3rem' }}>
+                                {DAYS.map(d => {
+                                    const active = addDays.includes(d);
+                                    return (
+                                        <button
+                                            key={d}
+                                            type="button"
+                                            onClick={() => toggleAddDay(d)}
+                                            style={{
+                                                padding: '0.4rem 0.75rem',
+                                                borderRadius: '8px',
+                                                border: active ? '1.5px solid #ff0088' : '1.5px solid #e2e8f0',
+                                                background: active ? '#ff0088' : 'white',
+                                                color: active ? 'white' : '#475569',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s'
+                                            }}
+                                        >
+                                            {d}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <LoadingButton loading={loading} label="Create Unit" loadingLabel="Creating…" style={{ ...s.btnPrimary, width: '100%' }} />
                     </form>
