@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,9 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 final dioProvider = Provider((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: (!kIsWeb && Platform.isAndroid)
-          ? 'https://192.168.1.154:8001/api' // MacBook Local IP
-          : 'https://localhost:8001/api', // Dynamic URL for macOS/Android
+      baseUrl: 'https://api.gmcchtsrtoken.chromologtechnologies.com/api',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       headers: {'Accept': 'application/json'},

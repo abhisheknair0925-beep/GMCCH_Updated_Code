@@ -1,15 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../models/unit_model.dart';
 
 class ApiService {
-  // MacBook Local IP: 192.168.1.154
-  static final String baseUrl = (!kIsWeb && Platform.isAndroid)
-      ? 'https://192.168.1.154:8000/api'   // Physical Device/Emulator → MacBook IP
-      : 'https://localhost:8000/api';      // macOS/iOS/web → localhost
+  static const String baseUrl = 'https://api.gmcchtsrtoken.chromologtechnologies.com/api';
   
   // Store token in memory for session
   static String? _token;
