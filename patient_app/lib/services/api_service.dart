@@ -8,14 +8,23 @@ import '../models/unit_model.dart';
 class ApiService {
   // MacBook Local IP: 192.168.1.154
   static final String baseUrl = (!kIsWeb && Platform.isAndroid)
-      ? 'http://192.168.1.154:8000/api'   // Physical Device/Emulator → MacBook IP
-      : 'http://localhost:8000/api';      // macOS/iOS/web → localhost
+      ? 'https://192.168.1.154:8000/api'   // Physical Device/Emulator → MacBook IP
+      : 'https://localhost:8000/api';      // macOS/iOS/web → localhost
   
   // Store token in memory for session
   static String? _token;
 
-  static void logout() {
-    _token = null;
+  static Future<void> logout() async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: _getHeaders(),
+      );
+    } catch (e) {
+      debugPrint('Error logging out from server: $e');
+    } finally {
+      _token = null;
+    }
   }
 
   static Map<String, String> _getHeaders() {

@@ -150,7 +150,7 @@ class HospitalUserController extends Controller
     }
 
     /**
-     * Bulk import users from a CSV file.
+     * Bulk import users from a CSV file (queued background process).
      */
     public function bulkStore(Request $request)
     {
@@ -160,7 +160,7 @@ class HospitalUserController extends Controller
             'file' => 'required|file|mimes:csv,txt|max:5120',
         ]);
 
-        $file   = $request->file('file');
+        $file = $request->file('file');
         $handle = fopen($file->getRealPath(), 'r');
 
         if ($handle === false) {
@@ -168,8 +168,9 @@ class HospitalUserController extends Controller
         }
 
         $header = fgetcsv($handle);
+        fclose($handle);
+
         if (!$header) {
-            fclose($handle);
             return response()->json(['success' => false, 'message' => 'The CSV file is empty.'], 422);
         }
 
@@ -179,117 +180,21 @@ class HospitalUserController extends Controller
         $missingColumns  = array_diff($requiredColumns, $header);
 
         if (!empty($missingColumns)) {
-            fclose($handle);
             return response()->json([
                 'success' => false,
                 'message' => 'Missing required columns: ' . implode(', ', $missingColumns) . '. The CSV must have "name" and "crno" columns.'
             ], 422);
         }
 
-        $rowCount = 0;
-        while (fgetcsv($handle) !== false) {
-            $rowCount++;
-        }
+        // Store file and dispatch background job
+        $path = $file->store('imports');
+        $absolutePath = \Illuminate\Support\Facades\Storage::path($path);
 
-        if ($rowCount === 0) {
-            fclose($handle);
-            return response()->json(['success' => false, 'message' => 'The CSV file has no data rows.'], 422);
-        }
-
-        rewind($handle);
-        fgetcsv($handle);
-
-        $importedCount = 0;
-        $skippedCount  = 0;
-        $errors        = [];
-        $batch         = [];
-        $rowNumber     = 1;
-        $now           = now()->toDateTimeString();
-
-        $existingCrnos = User::pluck('crno')->flip()->all();
-
-        DB::beginTransaction();
-        try {
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowNumber++;
-
-                if (count(array_filter($row, fn($v) => trim($v) !== '')) === 0) {
-                    continue;
-                }
-
-                if (count($row) !== count($header)) {
-                    $errors[] = "Row {$rowNumber}: column count mismatch — skipped.";
-                    $skippedCount++;
-                    continue;
-                }
-
-                $data = array_combine($header, $row);
-                $name = trim($data['name'] ?? '');
-                $crno = trim($data['crno'] ?? '');
-
-                $crno = User::formatCrno($crno);
-
-                if (empty($name) || empty($crno)) {
-                    $errors[] = "Row {$rowNumber}: 'name' and 'crno' cannot be empty — skipped.";
-                    $skippedCount++;
-                    continue;
-                }
-
-                if (isset($existingCrnos[$crno])) {
-                    $errors[] = "Row {$rowNumber}: CRNO '{$crno}' already exists — skipped.";
-                    $skippedCount++;
-                    continue;
-                }
-
-                $existingCrnos[$crno] = true;
-
-                $batch[] = [
-                    'name'        => $name,
-                    'crno'        => $crno,
-                    'user_age'    => isset($data['user_age']) && is_numeric($data['user_age']) ? (int)$data['user_age'] : null,
-                    'user_gender' => trim($data['user_gender'] ?? '') ?: null,
-                    'password'    => Hash::make($crno),
-                    'created_at'  => $now,
-                    'updated_at'  => $now,
-                ];
-
-                if (count($batch) >= self::CHUNK_SIZE) {
-                    DB::table('users')->insert($batch);
-                    $importedCount += count($batch);
-                    $batch = [];
-                }
-            }
-
-            if (!empty($batch)) {
-                DB::table('users')->insert($batch);
-                $importedCount += count($batch);
-            }
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            fclose($handle);
-            \Log::error($e);
-            $message = ($e instanceof \Illuminate\Database\QueryException || $e instanceof \PDOException)
-                ? 'An unexpected database error occurred.'
-                : $e->getMessage();
-            return response()->json([
-                'success' => false,
-                'message' => 'Bulk import failed: ' . $message
-            ], 500);
-        }
-
-        fclose($handle);
+        \App\Jobs\ImportPatientsJob::dispatch($absolutePath);
 
         return response()->json([
             'success'  => true,
-            'message'  => "Import complete. {$importedCount} users added, {$skippedCount} skipped.",
-            'summary'  => [
-                'imported' => $importedCount,
-                'skipped'  => $skippedCount,
-                'total'    => $rowCount,
-            ],
-            'errors'   => $errors
+            'message'  => "CSV file uploaded successfully. Bulk patient import is now processing in the background."
         ], 200);
     }
 }

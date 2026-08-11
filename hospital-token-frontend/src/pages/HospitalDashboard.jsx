@@ -78,11 +78,17 @@ const HospitalDashboard = () => {
         fetchData(true);
     }, [fetchData]);
 
-    const handleLogout = () => {
-        dashboardCache.invalidateAll();
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('hospital');
-        navigate('/Adminlogin');
+    const handleLogout = async () => {
+        try {
+            await api.post('/logout');
+        } catch (e) {
+            console.error('Logout failed:', e);
+        } finally {
+            dashboardCache.invalidateAll();
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('hospital');
+            navigate('/Adminlogin');
+        }
     };
 
     const handleManualRefresh = () => {

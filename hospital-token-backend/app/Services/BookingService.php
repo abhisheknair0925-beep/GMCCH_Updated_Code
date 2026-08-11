@@ -48,6 +48,8 @@ class BookingService
 
         // Retry up to 5 times on deadlock
         return DB::transaction(function () use ($userId, $unitId, $type, $source, $bookingDate) {
+            // Lock the user record to serialize booking requests for this user
+            \App\Models\User::where('id', $userId)->lockForUpdate()->first();
 
             // ── 1. Prevent duplicate: one active token per user per day ────
             if ($source === 'online') {

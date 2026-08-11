@@ -59,7 +59,7 @@ class UnitModel {
 
   String? get doctorQualification {
     if (doctors.isEmpty) return null;
-    return doctors.map((d) => d.qualification).where((q) => q != null && q!.isNotEmpty).join(', ');
+    return doctors.map((d) => d.qualification).where((q) => q != null && q.isNotEmpty).join(', ');
   }
 
   String? get doctorPhoto {
@@ -70,5 +70,10 @@ class UnitModel {
   int? get doctorId {
     if (doctors.isEmpty) return null;
     return doctors.first.id;
+  }
+
+  String? get doctorDepartment {
+    if (doctors.isEmpty) return null;
+    return doctors.first.department;
   }
 }

@@ -25,6 +25,8 @@ Route::middleware('throttle:60,1')->group(function () {
             return $request->user();
         });
 
+        Route::post('/logout', [AuthController::class, 'logout']);
+
         // Patient / User Only Routes
         Route::middleware('role:patient')->group(function () {
             // Booking Endpoints (Users)
