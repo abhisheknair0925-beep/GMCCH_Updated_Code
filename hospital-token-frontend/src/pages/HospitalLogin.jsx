@@ -69,7 +69,7 @@ const HospitalLogin = () => {
                 {/* Logo */}
                 <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-                        <img src="/images/g11.png" alt="GMCCH Logo" style={{ height: '44px', filter: 'brightness(0) invert(1)' }} />
+                        <img src="/images/g11.png" alt="GMCCH Logo" style={{ height: '44px', width: '44px', borderRadius: '50%', overflow: 'hidden', background: 'white', padding: '2px', objectFit: 'contain' }} />
                         <div>
                             <div style={{ color: 'white', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}>GMCCH</div>
                             <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Admin Portal</div>
@@ -112,7 +112,7 @@ const HospitalLogin = () => {
 
                     {/* Mobile logo (shown only when left panel is hidden) */}
                     <div style={{ textAlign: 'center', marginBottom: '2.5rem' }} className="login-mobile-logo">
-                        <img src="/images/g11.png" alt="GMCCH" style={{ height: '52px', marginBottom: '0.75rem' }} />
+                        <img src="/images/g11.png" alt="GMCCH" style={{ height: '52px', width: '52px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #f1f5f9', padding: '2px', objectFit: 'contain', margin: '0 auto 0.75rem', display: 'block' }} />
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>GMCCH Admin Portal</h2>
                         <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>Government Medical College Chest & Cancer Hospital</p>
                     </div>

@@ -285,7 +285,7 @@ h2 { font-size: 2.25rem; font-weight: 800; line-height: 1.2; }
 .about-accent-bar   { width: 80px; height: 6px; background: var(--primary); border-radius: 10px; }
 
 /* ── Reviews Section ── */
-.reviews-section     { padding: 5rem 0; background: white; }
+.reviews-section     { padding: 5rem 0 2rem; background: white; }
 .reviews-header      { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 3.5rem; }
 .reviews-h2          { font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 900; color: #0f172a; margin-bottom: 0.5rem; }
 .reviews-meta        { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
@@ -314,7 +314,7 @@ h2 { font-size: 2.25rem; font-weight: 800; line-height: 1.2; }
 .review-cta-btn      { display: inline-flex; align-items: center; gap: 0.5rem; }
 
 /* ── CTA Banner Section ── */
-.cta-section  { padding: 5rem 0; background: var(--primary); position: relative; overflow: hidden; }
+.cta-section  { padding: 2.5rem 0; background: var(--primary); position: relative; overflow: hidden; }
 .cta-bg-svg   { position: absolute; inset: 0; opacity: 0.08; }
 .cta-inner    { text-align: center; position: relative; z-index: 1; }
 .cta-h2       { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 900; color: white; margin-bottom: 1rem; }

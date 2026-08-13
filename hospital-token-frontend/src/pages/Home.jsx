@@ -92,7 +92,7 @@ const InitialsAvatar = ({ initials, color }) => (
   </div>
 );
 
-const GOOGLE_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/24px-Google_%22G%22_logo.svg.png";
+const GOOGLE_LOGO = "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20width%3D%2224%22%20height%3D%2224%22%3E%3Cpath%20fill%3D%22%234285F4%22%20d%3D%22M22.56%2012.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26%201.37-1.04%202.53-2.21%203.31v2.77h3.57c2.08-1.92%203.28-4.74%203.28-8.09z%22%2F%3E%3Cpath%20fill%3D%22%2334A853%22%20d%3D%22M12%2023c2.97%200%205.46-.98%207.28-2.66l-3.57-2.77c-.98.66-2.23%201.06-3.71%201.06-2.86%200-5.29-1.93-6.16-4.53H2.18v2.84C3.99%2020.53%207.7%2023%2012%2023z%22%2F%3E%3Cpath%20fill%3D%22%23FBBC05%22%20d%3D%22M5.84%2014.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43%208.55%201%2010.22%201%2012s.43%203.45%201.18%204.94l2.85-2.22.81-.63z%22%2F%3E%3Cpath%20fill%3D%22%23EA4335%22%20d%3D%22M12%205.38c1.62%200%203.06.56%204.21%201.64l3.15-3.15C17.45%202.09%2014.97%201%2012%201%207.7%201%203.99%203.47%202.18%207.06l3.66%202.84c.87-2.6%203.3-4.52%206.16-4.52z%22%2F%3E%3C%2Fsvg%3E";
 const REVIEW_URL  = "https://www.google.com/search?sca_esv=55117bfb786c3fb6&si=AL3DRZHrmvnFAVQPOO2Bzhf8AX9KZZ6raUI_dT7DG_z0kV2_x7N5Kx8xRdty5DVShoC9uzqQ8WTLIROeDOA8B6_hbwiRnyRXRk8KcYdVL-gNKm8V1fMekpMfD9m0KEUDhVZnK6qBfHkJftEg9sHztrxMGLqAxWHhhfr6uXkPr7cT89F1MLvkIS26UOzTrh9VvYXUm_xJaRKT&q=Government+Medical+College+Chest+and+cancer+Hospital,+Thrissur+Reviews&sa=X&ved=2ahUKEwjproLJwqyUAxVlS3ADHegnMvIQ0bkNegQILhAH";
 
 // ── Page Component ─────────────────────────────────────────────────────────
@@ -189,7 +189,7 @@ const Home = () => {
           <h2 className="about-heading">About Us</h2>
           <div className="about-grid">
             <div className="about-img-wrap">
-              <img src="/images/hospital-building.png" alt="GMCCH Building" />
+              <img src="/images/Chest-Hospital.jpg" alt="GMCCH Building" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
             </div>
             <div>
               <h3 className="about-h3">Government Medical College Chest and Cancer Hospital, Thrissur</h3>
