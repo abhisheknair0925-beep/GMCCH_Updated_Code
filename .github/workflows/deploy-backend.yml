@@ -7,7 +7,7 @@ on:
     paths:
       - 'hospital-token-backend/**'
       - '.github/workflows/deploy-backend.yml'
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   backend-deploy:
